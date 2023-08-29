@@ -116,6 +116,11 @@ img {
   left: 587px;
 }
 
+.clipped-border:nth-child(7) {
+  top: 392px;
+  left: 235px;
+}
+
 
 #clipped {
   -webkit-clip-path: polygon(
