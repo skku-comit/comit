@@ -39,6 +39,11 @@ btn[5].onclick = function () {
     overlay.classList.remove("modal-hidden");
 };
 
+btn[6].onclick = function () {
+    modal[6].style.display = "block";
+    overlay.classList.remove("modal-hidden");
+};
+
 // When the user clicks on <closeModal> (x), close the modal
 closeModal[0].onclick = function () {
     modal[0].style.display = "none";
@@ -69,6 +74,11 @@ closeModal[5].onclick = function () {
     overlay.classList.add("modal-hidden");
 };
 
+closeModal[6].onclick = function () {
+    modal[6].style.display = "none";
+    overlay.classList.add("modal-hidden");
+};
+
 overlay.onclick = function () {
     modal[0].style.display = "none";
     modal[1].style.display = "none";
@@ -76,6 +86,7 @@ overlay.onclick = function () {
     modal[3].style.display = "none";
     modal[4].style.display = "none";
     modal[5].style.display = "none";
+    modal[6].style.display = "none";
     overlay.classList.add("modal-hidden");
 };
 
