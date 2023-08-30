@@ -16,6 +16,7 @@ section {
   margin-top: 35px;
   margin-bottom: 35px;
 }
+
 .intro {
   display: flex;
   flex-direction: column;
@@ -126,7 +127,14 @@ section {
 .container-hidden {
   opacity: 0%;
 }
+
 .language {
+  font-size: 13px;
+  font-family: korFont2;
+  padding-bottom: 5px;
+}
+
+.time {
   font-size: 13px;
   font-family: korFont2;
   padding-bottom: 5px;
@@ -157,28 +165,12 @@ section {
   padding-right: 5px;
 }
 
-.c-logo {
-  width: 100px;
-  margin-left: 0px;
+.study-logo{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
-.py-logo {
-  width: 110px;
-  margin-left: 0px;
-}
-.js-logo {
-  margin-left: 0px;
-  width: 110px;
-}
-.algorithm-logo {
-  margin-left: -10px;
-  width: 130px;
-}
-.web-logo {
-  width: 120px;
-}
-.ai-logo {
-  width: 140px;
-}
+
 .modal-hidden {
   display: none;
 }
