@@ -145,11 +145,18 @@ section {
   font-family: korFont2;
 }
 
-.classPic {
-  width: 120px;
-  height: 120px;
+.study-logo {
+  max-width: 150px;
+  height: 100px;
   margin-top: 10px;
+  margin-right: 10px;
 }
+
+.study-logo img{
+  width: 100%;
+  height: 100%;
+}
+
 .btn,
 .btn:link,
 .btn:visited {
@@ -163,12 +170,6 @@ section {
 }
 .el-1 {
   padding-right: 5px;
-}
-
-.study-logo{
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
 }
 
 .modal-hidden {
