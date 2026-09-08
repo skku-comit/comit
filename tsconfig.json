@@ -1,0 +1,8 @@
+{
+  "extends": "@comit/typescript-config/base.json",
+  "compilerOptions": {
+    "paths": {
+      "~/*": ["./*"]
+    }
+  }
+}

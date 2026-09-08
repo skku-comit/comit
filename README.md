@@ -1,0 +1,53 @@
+# comit
+
+pnpm과 Turborepo 기반 동아리 웹사이트 모노레포.
+
+| 영역                                                   | 역할                    | 개발 주소             |
+| ------------------------------------------------------ | ----------------------- | --------------------- |
+| `apps/web`                                             | Next.js 일반 사용자 웹  | http://localhost:3000 |
+| `apps/admin`                                           | Next.js 운영자 웹       | http://localhost:3001 |
+| `apps/api`                                             | NestJS 백엔드 API       | http://localhost:3002 |
+| `packages/ui`                                          | 공통 shadcn UI와 스타일 | —                     |
+| `packages/typescript-config`, `packages/eslint-config` | 공통 개발 설정          | —                     |
+
+## 시작하기
+
+Node.js 26.8.1(Current)과 pnpm 12.3.4를 사용한다. `.node-version`, `package.json`과 `pnpm-lock.yaml`에 실행 환경과 의존성을 기록한다.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+개별 앱 실행은 `pnpm --filter @comit/web dev`처럼 사용한다. API 포트는 `PORT` 환경 변수로 변경할 수 있다.
+
+```sh
+pnpm format
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+`test`는 현재 API의 실제 HTTP 응답을 검사한다. 웹/UI에는 아직 테스트가 없다. 빌드 후 `pnpm --filter @comit/api start` 또는 각 웹 앱의 `start`로 실행한다.
+
+## 초기 설정
+
+- web/admin은 Next.js App Router, api는 NestJS를 사용한다. 전체 TypeScript에 `strict: true`를 적용한다.
+- UI는 shadcn CLI 4.21.0의 preset `b5cjpD6W2`와 `--template next --monorepo --pointer`로 생성했다. 두 웹 앱은 `@comit/ui/components/button`과 공통 CSS를 사용한다.
+- 컴포넌트 추가는 `pnpm dlx shadcn@4.21.0 add button --cwd apps/web`처럼 실행한다. `components.json`이 공통 UI 패키지를 가리킨다.
+- `~/`는 저장소 루트, `@/`는 해당 앱 또는 패키지 디렉터리 루트다. API의 예는 `@/src/app.module`이다. 앱 간 소스를 직접 참조하지 않고, 공통 코드는 `@comit/*` 공개 exports로 가져온다.
+- Next.js는 tsconfig alias를 사용하고 API는 TypeScript 및 webpack에서 같은 alias를 해석한다.
+- Prettier가 import를 Node 내장 → 외부 패키지 → `@comit/*` → `~/` → `@/` → 상대 경로 순으로 정렬한다. 그룹 사이에 빈 줄을 두며 부수효과 import 순서는 보존한다.
+- 생성된 Geist 폰트는 `next/font/google`을 사용하므로 최초 개발 실행과 빌드에는 Google Fonts 접근이 필요하다.
+
+## 작업 문서
+
+커밋 메시지는 [커밋 컨벤션](docs/commit-convention.md)을 따른다.
+
+먼저 [AGENTS.md](AGENTS.md)를 읽고 [task 템플릿](docs/tasks/template.md)을 복사한다. 파일명은 `NNNN-task-name.md`로, 기존 최대 번호 다음 번호를 사용한다. 번호는 재정렬하거나 재사용하지 않는다. 다음 작업은 `0003`부터 시작한다.
+
+첫 작업: [0001-project-setup.md](docs/tasks/0001-project-setup.md).
+
+DB, 인증·권한, API 계약, 상태 관리, 데이터 fetching, 배포·CI, 상세 폴더 구조와 도메인 모델은 이후 task에서 정의한다.
