@@ -40,13 +40,13 @@ pnpm build
 - `~/`는 저장소 루트, `@/`는 해당 앱 또는 패키지 디렉터리 루트다. API의 예는 `@/src/app.module`이다. 앱 간 소스를 직접 참조하지 않고, 공통 코드는 `@comit/*` 공개 exports로 가져온다.
 - Next.js는 tsconfig alias를 사용하고 API는 TypeScript 및 webpack에서 같은 alias를 해석한다.
 - Prettier가 import를 Node 내장 → 외부 패키지 → `@comit/*` → `~/` → `@/` → 상대 경로 순으로 정렬한다. 그룹 사이에 빈 줄을 두며 부수효과 import 순서는 보존한다.
-- 생성된 Geist 폰트는 `next/font/google`을 사용하므로 최초 개발 실행과 빌드에는 Google Fonts 접근이 필요하다.
+- 모든 UI 글꼴은 로컬 Pretendard Variable v1.3.9를 사용한다. 공통 CSS에서 `packages/ui/src/fonts/PretendardVariable.woff2`를 로드하며 외부 폰트 서비스 접근은 필요하지 않다. [공식 배포본](https://github.com/orioncactus/pretendard/tree/v1.3.9)과 [SIL Open Font License](packages/ui/src/fonts/LICENSE)를 함께 보관한다.
 
 ## 작업 문서
 
 커밋 메시지는 [커밋 컨벤션](docs/commit-convention.md)을 따른다.
 
-먼저 [AGENTS.md](AGENTS.md)를 읽고 [task 템플릿](docs/tasks/template.md)을 복사한다. 파일명은 `NNNN-task-name.md`로, 기존 최대 번호 다음 번호를 사용한다. 번호는 재정렬하거나 재사용하지 않는다. 다음 작업은 `0003`부터 시작한다.
+먼저 [AGENTS.md](AGENTS.md)를 읽고 [task 템플릿](docs/tasks/template.md)을 복사한다. 파일명은 `NNNN-task-name.md`로, 기존 최대 번호 다음 번호를 사용한다. 번호는 재정렬하거나 재사용하지 않는다. 다음 작업은 `0004`부터 시작한다.
 
 첫 작업: [0001-project-setup.md](docs/tasks/0001-project-setup.md).
 
