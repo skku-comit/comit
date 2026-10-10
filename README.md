@@ -51,3 +51,14 @@ pnpm build
 첫 작업: [0001-project-setup.md](docs/tasks/0001-project-setup.md).
 
 DB, 인증·권한, API 계약, 상태 관리, 데이터 fetching, 배포·CI, 상세 폴더 구조와 도메인 모델은 이후 task에서 정의한다.
+
+## 디자인 시스템
+
+공통 토큰과 컴포넌트, Storybook은 `packages/ui`에서 함께 관리한다.
+
+```sh
+pnpm --filter @comit/ui storybook
+pnpm --filter @comit/ui build-storybook
+```
+
+Storybook은 http://localhost:6006 에서 실행한다. 루트에서는 `pnpm exec turbo storybook`과 `pnpm exec turbo build-storybook`으로도 실행할 수 있다. 정적 빌드는 `packages/ui/storybook-static`에 생성된다. 개발 의존성은 UI 패키지에만 두며 앱은 공개된 컴포넌트와 CSS만 가져온다. Storybook의 시작하기 문서에 디자인 원칙·토큰·사용 기준을, 조합 예제에 가상 가입 폼·스터디·관리자 목록을 정리한다.

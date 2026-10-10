@@ -47,3 +47,6 @@ next-env.d.ts
 # Local verification artifacts
 output/
 .playwright-cli/
+
+# Storybook
+storybook-static/
