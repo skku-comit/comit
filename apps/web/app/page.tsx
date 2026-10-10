@@ -6,9 +6,7 @@ import {
   BookOpen,
   Code2,
   Cpu,
-  Menu,
   Users,
-  X,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -30,13 +28,8 @@ import {
 } from "@comit/ui/components/dialog"
 import { Input } from "@comit/ui/components/input"
 
-const navigation = [
-  ["코밋 소개", "about"],
-  ["스터디", "studies"],
-  ["활동", "activities"],
-  ["소식", "news"],
-  ["가입 안내", "join"],
-] as const
+import { SiteHeader } from "@/components/site-header"
+
 const activities = [
   {
     icon: BookOpen,
@@ -88,7 +81,6 @@ const studies = [
 ]
 
 export default function Page() {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [filter, setFilter] = useState("전체")
   const [query, setQuery] = useState("")
   const [selected, setSelected] = useState<(typeof studies)[number] | null>(
@@ -109,65 +101,7 @@ export default function Page() {
       >
         본문으로 이동
       </a>
-      <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-6 px-6">
-          <a
-            href="#main"
-            aria-label="CoMit 홈"
-            className="text-2xl font-extrabold tracking-tight"
-          >
-            CoMit<span className="text-primary">.</span>
-          </a>
-          <nav
-            aria-label="주 메뉴"
-            className="hidden items-center gap-7 md:flex"
-          >
-            {navigation.map(([label, id]) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary focus-visible:outline-ring"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setLoginOpen(true)}>
-              로그인 <ArrowRight aria-hidden />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
-              aria-expanded={menuOpen}
-              aria-controls="mobile-navigation"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              {menuOpen ? <X /> : <Menu />}
-            </Button>
-          </div>
-        </div>
-        {menuOpen && (
-          <nav
-            id="mobile-navigation"
-            aria-label="모바일 메뉴"
-            className="grid border-t px-6 py-4 md:hidden"
-          >
-            {navigation.map(([label, id]) => (
-              <a
-                key={id}
-                href={`#${id}`}
-                className="rounded-md px-3 py-3 hover:bg-muted"
-                onClick={() => setMenuOpen(false)}
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-        )}
-      </header>
+      <SiteHeader onLogin={() => setLoginOpen(true)} />
       <main id="main">
         <section className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-[1.2fr_1fr] lg:py-28">
           <div>
