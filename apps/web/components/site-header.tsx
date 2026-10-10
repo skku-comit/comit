@@ -1,6 +1,8 @@
 "use client"
 
-import { BookOpen, ChevronDown, Code2, Menu, Users, X } from "lucide-react"
+import { ChevronDown, Code2, Menu, Users, X } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@comit/ui/components/button"
@@ -13,31 +15,13 @@ const groups = [
       {
         label: "코밋 알아보기",
         description: "서로 다른 시작점에서 함께 성장하는 우리",
-        id: "about",
+        href: "/about",
         icon: Users,
       },
       {
         label: "가입 안내",
         description: "코밋과 함께하는 첫걸음",
-        id: "join",
-        icon: Code2,
-      },
-    ],
-  },
-  {
-    label: "활동",
-    caption: "LEARN & BUILD",
-    items: [
-      {
-        label: "스터디",
-        description: "관심 있는 주제를 함께 배우고 나눠요",
-        id: "studies",
-        icon: BookOpen,
-      },
-      {
-        label: "코밋의 활동",
-        description: "AI, 프로젝트부터 코드 너머의 연결까지",
-        id: "activities",
+        href: "/join",
         icon: Code2,
       },
     ],
@@ -45,13 +29,14 @@ const groups = [
 ] as const
 
 const links = [
-  ["스터디", "studies"],
-  ["소식", "news"],
+  ["스터디", "/studies"],
+  ["소식", "/news"],
 ] as const
 const linkClass =
   "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
 
 export function SiteHeader({ onLogin }: { onLogin: () => void }) {
+  const pathname = usePathname()
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
@@ -92,14 +77,15 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
       }}
     >
       <div className="relative mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-6 lg:grid lg:grid-cols-[1fr_auto_1fr]">
-        <a
-          href="#main"
+        <Link
+          href="/"
           aria-label="CoMit 홈"
+          aria-current={pathname === "/" ? "page" : undefined}
           onClick={close}
           className="w-fit rounded-md text-[28px] font-extrabold tracking-tight focus-visible:outline-2 focus-visible:outline-ring"
         >
           CoMit<span className="text-primary">.</span>
-        </a>
+        </Link>
         <nav aria-label="주 메뉴" className="hidden items-center gap-3 lg:flex">
           {groups.map((group) => (
             <div key={group.label}>
@@ -131,9 +117,12 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
                   </p>
                   <div className="grid grid-cols-2 gap-3">
                     {group.items.map((item) => (
-                      <a
-                        key={item.id}
-                        href={`#${item.id}`}
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        aria-current={
+                          pathname === item.href ? "page" : undefined
+                        }
                         onClick={close}
                         className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
                       >
@@ -148,17 +137,23 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
                             {item.description}
                           </span>
                         </span>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 </div>
               )}
             </div>
           ))}
-          {links.map(([label, id]) => (
-            <a key={id} href={`#${id}`} onClick={close} className={linkClass}>
+          {links.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={pathname === href ? "page" : undefined}
+              onClick={close}
+              className={linkClass}
+            >
               {label}
-            </a>
+            </Link>
           ))}
         </nav>
         <div className="flex items-center justify-end gap-2">
@@ -173,7 +168,12 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
             로그인
           </Button>
           <Button
-            render={<a href="#join" />}
+            render={
+              <Link
+                href="/join"
+                aria-current={pathname === "/join" ? "page" : undefined}
+              />
+            }
             nativeButton={false}
             className="h-10 px-4"
             onClick={close}
@@ -209,9 +209,10 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
                 {group.label}
               </p>
               {group.items.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  aria-current={pathname === item.href ? "page" : undefined}
                   onClick={close}
                   className="block rounded-lg px-3 py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
                 >
@@ -221,13 +222,21 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
                   <span className="mt-1 block text-xs text-muted-foreground">
                     {item.description}
                   </span>
-                </a>
+                </Link>
               ))}
             </div>
           ))}
-          <a href="#news" onClick={close} className={`block ${linkClass}`}>
-            소식
-          </a>
+          {links.map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              aria-current={pathname === href ? "page" : undefined}
+              onClick={close}
+              className={`block ${linkClass}`}
+            >
+              {label}
+            </Link>
+          ))}
           <Button
             variant="outline"
             className="mt-4 w-full"

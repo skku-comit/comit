@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 
 import "@comit/ui/globals.css"
 
+import { SiteShell } from "@/components/site-shell"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata: Metadata = {
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning className="font-sans antialiased">
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <SiteShell>{children}</SiteShell>
+        </ThemeProvider>
       </body>
     </html>
   )
