@@ -35,7 +35,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       >
         본문으로 이동
       </a>
-      <SiteHeader key={pathname} onLogin={() => router.push("/my")} />
+      <SiteHeader key={pathname} />
       <main id="main" tabIndex={-1}>
         {children}
       </main>

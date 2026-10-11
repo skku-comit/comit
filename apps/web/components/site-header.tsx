@@ -1,11 +1,13 @@
 "use client"
 
-import { ChevronDown, Code2, Menu, Users, X } from "lucide-react"
+import { ChevronDown, Code2, Menu, UserRound, Users, X } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 import { Button } from "@comit/ui/components/button"
+
+import { useHeaderAccount } from "@/components/use-header-account"
 
 const groups = [
   {
@@ -30,13 +32,16 @@ const groups = [
 
 const links = [
   ["스터디", "/studies"],
+  ["세션", "/sessions"],
+  ["프로젝트", "/projects"],
   ["소식", "/news"],
-  ["내 활동", "/my"],
 ] as const
 const linkClass =
   "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
 
-export function SiteHeader({ onLogin }: { onLogin: () => void }) {
+export function SiteHeader() {
+  const { account, loading } = useHeaderAccount()
+  const accountTrigger = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -71,23 +76,24 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
       }}
       onKeyDown={(event) => {
         if (event.key === "Escape") {
-          if (openGroup) groupTriggers.current[openGroup]?.focus()
+          if (openGroup === "account") accountTrigger.current?.focus()
+          else if (openGroup) groupTriggers.current[openGroup]?.focus()
           else if (mobileOpen) mobileTrigger.current?.focus()
           close()
         }
       }}
     >
-      <div className="relative mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-4 px-6 lg:grid lg:grid-cols-[1fr_auto_1fr]">
+      <div className="relative mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 xl:grid xl:grid-cols-[1fr_auto_1fr]">
         <Link
           href="/"
           aria-label="CoMit 홈"
           aria-current={pathname === "/" ? "page" : undefined}
           onClick={close}
-          className="w-fit rounded-md text-[28px] font-extrabold tracking-tight focus-visible:outline-2 focus-visible:outline-ring"
+          className="w-fit rounded-md text-2xl font-extrabold tracking-tight focus-visible:outline-2 focus-visible:outline-ring sm:text-[28px]"
         >
           CoMit<span className="text-primary">.</span>
         </Link>
-        <nav aria-label="주 메뉴" className="hidden items-center gap-3 lg:flex">
+        <nav aria-label="주 메뉴" className="hidden items-center gap-3 xl:flex">
           {groups.map((group) => (
             <div key={group.label}>
               <Button
@@ -149,7 +155,11 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
             <Link
               key={href}
               href={href}
-              aria-current={pathname === href ? "page" : undefined}
+              aria-current={
+                pathname === href || pathname.startsWith(`${href}/`)
+                  ? "page"
+                  : undefined
+              }
               onClick={close}
               className={linkClass}
             >
@@ -158,34 +168,96 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
           ))}
         </nav>
         <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            className="hidden sm:inline-flex"
-            onClick={() => {
-              close()
-              onLogin()
-            }}
-          >
-            로그인
-          </Button>
-          <Button
-            render={
-              <Link
-                href="/join"
-                aria-current={pathname === "/join" ? "page" : undefined}
-              />
-            }
-            nativeButton={false}
-            className="h-10 px-4"
-            onClick={close}
-          >
-            가입 안내
-          </Button>
+          {loading ? (
+            <span
+              role="status"
+              className="h-10 w-28 animate-pulse rounded-md bg-muted motion-reduce:animate-none"
+            >
+              <span className="sr-only">계정 확인 중</span>
+            </span>
+          ) : account ? (
+            <div className="relative">
+              <Button
+                ref={accountTrigger}
+                variant="outline"
+                className="max-w-[120px] gap-2 sm:max-w-[220px]"
+                aria-expanded={openGroup === "account"}
+                aria-controls="header-account"
+                onClick={() => {
+                  setMobileOpen(false)
+                  setOpenGroup(openGroup === "account" ? null : "account")
+                }}
+              >
+                <UserRound aria-hidden className="size-4 shrink-0" />
+                <span className="truncate">
+                  {account.name ?? account.email}
+                </span>
+                <ChevronDown aria-hidden className="size-4 shrink-0" />
+              </Button>
+              {openGroup === "account" && (
+                <div
+                  id="header-account"
+                  className="absolute top-full right-0 mt-2 w-[min(280px,calc(100vw-48px))] rounded-xl border bg-background p-3 shadow-lg"
+                >
+                  {account.name && (
+                    <p className="px-3 pt-2 text-sm font-semibold break-all">
+                      {account.name}
+                    </p>
+                  )}
+                  <p className="px-3 py-2 text-sm break-all text-muted-foreground">
+                    {account.email}
+                  </p>
+                  <Link
+                    href="/my"
+                    onClick={close}
+                    aria-current={pathname === "/my" ? "page" : undefined}
+                    className={`block ${linkClass}`}
+                  >
+                    내 활동
+                  </Link>
+                  <form action="/auth/logout" method="post">
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      className="mt-1 w-full justify-start"
+                    >
+                      로그아웃
+                    </Button>
+                  </form>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Button
+                render={
+                  <Link
+                    href="/join"
+                    aria-current={pathname === "/join" ? "page" : undefined}
+                  />
+                }
+                nativeButton={false}
+                className="h-10 px-2 sm:px-3"
+                onClick={close}
+              >
+                부원 가입
+              </Button>
+              <Button
+                render={<Link href="/login" />}
+                nativeButton={false}
+                variant="ghost"
+                className="h-10 px-2 sm:px-3"
+                onClick={close}
+              >
+                로그인
+              </Button>
+            </>
+          )}
           <Button
             ref={mobileTrigger}
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="xl:hidden"
             aria-label={mobileOpen ? "메뉴 닫기" : "메뉴 열기"}
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
@@ -202,7 +274,7 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
         <nav
           id="mobile-navigation"
           aria-label="모바일 메뉴"
-          className="max-h-[calc(100dvh-72px)] overflow-y-auto border-t px-6 py-5 lg:hidden"
+          className="max-h-[calc(100dvh-72px)] overflow-y-auto border-t px-6 py-5 xl:hidden"
         >
           {groups.map((group) => (
             <div key={group.label} className="mb-4">
@@ -231,23 +303,17 @@ export function SiteHeader({ onLogin }: { onLogin: () => void }) {
             <Link
               key={href}
               href={href}
-              aria-current={pathname === href ? "page" : undefined}
+              aria-current={
+                pathname === href || pathname.startsWith(`${href}/`)
+                  ? "page"
+                  : undefined
+              }
               onClick={close}
               className={`block ${linkClass}`}
             >
               {label}
             </Link>
           ))}
-          <Button
-            variant="outline"
-            className="mt-4 w-full"
-            onClick={() => {
-              close()
-              onLogin()
-            }}
-          >
-            로그인
-          </Button>
         </nav>
       )}
     </header>
