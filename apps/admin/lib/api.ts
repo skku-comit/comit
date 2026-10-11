@@ -1,13 +1,19 @@
 export async function api<T>(
   path: string,
   body?: unknown,
-  method = body ? "POST" : "GET"
+  method = body ? "POST" : "GET",
+  { redirectOnUnauthorized = true }: { redirectOnUnauthorized?: boolean } = {}
 ): Promise<T> {
   const response = await fetch(`/api/backend/${path}`, {
     method,
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   })
+  if (response.status === 401 && redirectOnUnauthorized) {
+    window.location.replace("/login")
+    // 페이지 이동이 끝날 때까지 오류 UI와 후속 작업을 실행하지 않는다.
+    return new Promise<T>(() => {})
+  }
   const text = await response.text()
   let data
   try {

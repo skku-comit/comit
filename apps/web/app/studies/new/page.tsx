@@ -2,9 +2,9 @@
 
 import { ClipboardCheck, Send, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
-import type { ManagedStudyRecord } from "@comit/contracts"
+import type { ManagedStudyRecord, MeResponse } from "@comit/contracts"
 import {
   Card,
   CardContent,
@@ -20,6 +20,30 @@ export default function Page() {
   const router = useRouter()
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
+  const [authenticated, setAuthenticated] = useState(false)
+  useEffect(() => {
+    let active = true
+    api<MeResponse>("users/me")
+      .then(() => {
+        if (active) setAuthenticated(true)
+      })
+      .catch((e: Error) => {
+        if (active) setError(e.message)
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+  if (!authenticated)
+    return (
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        {error ? (
+          <StudyError message={error} />
+        ) : (
+          <p role="status">불러오는 중…</p>
+        )}
+      </section>
+    )
   return (
     <section className="mx-auto max-w-6xl px-6 py-16">
       <StudyBackLink />

@@ -46,7 +46,9 @@ export function StudyDetail({ study: s }: { study: StudyRecord }) {
   }, [])
   useEffect(() => {
     let active = true
-    api<MyStudiesResponse>("studies/me")
+    api<MyStudiesResponse>("studies/me", undefined, "GET", {
+      redirectOnUnauthorized: false,
+    })
       .then((r) => {
         if (active) {
           setMine(r)
