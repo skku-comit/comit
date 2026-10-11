@@ -6,7 +6,7 @@ import { Badge } from "@comit/ui/components/badge"
 import { Button } from "@comit/ui/components/button"
 
 export const metadata: Metadata = {
-  title: "함께 배우는 프로그래밍·AI 동아리 | CoMit",
+  title: "개발자를 꿈꾸는 모든 학생들을 위해서 | CoMit",
   description: "성균관대학교 중앙 프로그래밍·AI 동아리 코밋을 만나보세요.",
 }
 
@@ -18,16 +18,15 @@ export default function Page() {
           <Badge variant="success">
             성균관대학교 중앙 프로그래밍 · AI 동아리
           </Badge>
-          <h1 className="mt-7 text-4xl leading-tight font-bold tracking-tight sm:text-6xl">
-            함께 배우고,
-            <br />더 멀리 <span className="text-primary">만들어요.</span>
+          <h1 className="mt-7 text-4xl leading-tight font-bold tracking-tight sm:text-5xl">
+            <span className="text-primary">개발자</span>를 꿈꾸는
+            <br />
+            모든 <span className="text-primary">학생</span>들을 위해서
           </h1>
           <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted-foreground">
-            처음이어도 괜찮아요.
+            자유롭게 지식을 공유하고 개발할 수 있는
             <br />
-            코딩과 AI에 대한 호기심이 있다면,
-            <br />
-            코밋에서 함께 시작해요.
+            성균관대학교 중앙 프로그래밍 · AI 동아리, 코밋
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
