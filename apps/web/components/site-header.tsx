@@ -31,6 +31,7 @@ const groups = [
 const links = [
   ["스터디", "/studies"],
   ["소식", "/news"],
+  ["내 활동", "/my"],
 ] as const
 const linkClass =
   "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"

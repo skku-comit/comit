@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+  schemas   = ["comit"]
+}
+
+model User {
+  id             String       @id @default(uuid()) @db.Uuid
+  authId         String?      @unique @db.Uuid
+  name           String
+  studentId      String       @unique
+  department     String
+  phone          String
+  email          String?
+  birthDate      DateTime     @db.Date
+  academicStatus String
+  academicOther  String?
+  campus         String
+  memberships    Membership[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("users")
+  @@schema("comit")
+}
+
+model Semester {
+  id                String       @id @default(uuid()) @db.Uuid
+  name              String       @unique
+  isCurrent         Boolean      @default(false)
+  isOpen            Boolean      @default(false)
+  newStartsAt       DateTime
+  newEndsAt         DateTime
+  returningStartsAt DateTime
+  returningEndsAt   DateTime
+  newFee            Int
+  returningFee      Int
+  bank              String
+  accountNumber     String
+  accountHolder     String
+  consentText       String
+  consentVersion    String
+  memberships       Membership[]
+  createdAt         DateTime     @default(now())
+
+  @@map("semesters")
+  @@schema("comit")
+}
+
+model Membership {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  semesterId       String    @db.Uuid
+  applicantAuthId  String?   @db.Uuid
+  type             String
+  status           String    @default("PENDING")
+  paymentConfirmed Boolean   @default(false)
+  linkConfirmed    Boolean   @default(false)
+  profile          Json
+  fee              Int
+  consentText      String
+  consentVersion   String
+  consentedAt      DateTime?
+  reason           String?
+  version          Int       @default(0)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  semester         Semester  @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([userId, semesterId])
+  @@unique([applicantAuthId, semesterId])
+  @@map("memberships")
+  @@schema("comit")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String
+  entity    String
+  entityId  String
+  action    String
+  details   Json
+  createdAt DateTime @default(now())
+
+  @@index([entityId, createdAt])
+  @@map("audit_logs")
+  @@schema("comit")
+}

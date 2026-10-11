@@ -8,14 +8,26 @@
     "start": "node dist/main.js",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm build && node --test test/*.test.cjs"
+    "test": "pnpm build && node --test test/*.test.cjs test/*.integration.cjs",
+    "db:generate": "prisma generate",
+    "db:deploy": "prisma migrate deploy",
+    "db:migrate": "prisma migrate dev",
+    "prebuild": "prisma generate",
+    "predev": "prisma generate",
+    "pretypecheck": "prisma generate",
+    "test:integration": "node --test test/memberships.integration.cjs"
   },
   "dependencies": {
+    "@comit/contracts": "workspace:*",
     "@nestjs/common": "^11",
     "@nestjs/core": "^11",
     "@nestjs/platform-express": "^11",
+    "@prisma/client": "6.19.3",
+    "@supabase/supabase-js": "2.117.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "zod": "4.6.5",
+    "dotenv": "16.6.1"
   },
   "devDependencies": {
     "@comit/eslint-config": "workspace:*",
@@ -26,6 +38,7 @@
     "ts-loader": "9.5.4",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^5.9.3",
-    "webpack": "^5"
+    "webpack": "^5",
+    "prisma": "6.19.3"
   }
 }

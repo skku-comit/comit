@@ -46,11 +46,11 @@ pnpm build
 
 커밋 메시지는 [커밋 컨벤션](docs/commit-convention.md)을 따른다.
 
-먼저 [AGENTS.md](AGENTS.md)를 읽고 [task 템플릿](docs/tasks/template.md)을 복사한다. 파일명은 `NNNN-task-name.md`로, 기존 최대 번호 다음 번호를 사용한다. 번호는 재정렬하거나 재사용하지 않는다. 다음 작업은 `0004`부터 시작한다.
+먼저 [AGENTS.md](AGENTS.md)를 읽고 [task 템플릿](docs/tasks/template.md)을 복사한다. 파일명은 `NNNN-task-name.md`로, 기존 최대 번호 다음 번호를 사용한다. 번호는 재정렬하거나 재사용하지 않는다. 새 task는 기존 최대 번호 다음 번호로 작성한다.
 
 첫 작업: [0001-project-setup.md](docs/tasks/0001-project-setup.md).
 
-DB, 인증·권한, API 계약, 상태 관리, 데이터 fetching, 배포·CI, 상세 폴더 구조와 도메인 모델은 이후 task에서 정의한다.
+부원 관리의 DB·학교 로그인·API·관리자 설정은 [부원 관리 실행 안내](docs/user-management-setup.md)를 참고한다. 배포·CI와 나머지 도메인은 후속 task에서 정의한다.
 
 ## 디자인 시스템
 

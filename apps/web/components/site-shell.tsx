@@ -1,18 +1,10 @@
 "use client"
 
 import { ArrowRight } from "lucide-react"
-import { usePathname } from "next/navigation"
-import { createContext, useContext, useState } from "react"
+import { usePathname, useRouter } from "next/navigation"
+import { createContext, useContext } from "react"
 
-import { Badge } from "@comit/ui/components/badge"
 import { Button } from "@comit/ui/components/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@comit/ui/components/dialog"
 
 import { SiteHeader } from "@/components/site-header"
 
@@ -34,16 +26,16 @@ export function LoginButton({
 }
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [loginOpen, setLoginOpen] = useState(false)
+  const router = useRouter()
   return (
-    <LoginContext.Provider value={() => setLoginOpen(true)}>
+    <LoginContext.Provider value={() => router.push("/my")}>
       <a
         href="#main"
         className="sr-only z-50 rounded-md bg-background p-3 focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
       >
         본문으로 이동
       </a>
-      <SiteHeader key={pathname} onLogin={() => setLoginOpen(true)} />
+      <SiteHeader key={pathname} onLogin={() => router.push("/my")} />
       <main id="main" tabIndex={-1}>
         {children}
       </main>
@@ -64,21 +56,6 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
           </p>
         </div>
       </footer>
-      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
-        <DialogContent>
-          <DialogTitle>가입과 재등록 안내</DialogTitle>
-          <DialogDescription>
-            학교 구글 계정으로 로그인하고, 이번 학기 신청을 진행합니다.
-          </DialogDescription>
-          <Badge variant="warning">로그인 · 온라인 신청 준비 중</Badge>
-          <p className="text-sm text-muted-foreground">
-            현재는 가입 절차를 안내하는 화면입니다. 아직 로그인하거나 신청서를
-            제출할 수 없습니다. 모집 일정과 회비는 운영진 확인 후 공개합니다.
-          </p>
-          <Button disabled>학교 구글 계정으로 로그인</Button>
-          <DialogClose>닫기</DialogClose>
-        </DialogContent>
-      </Dialog>
     </LoginContext.Provider>
   )
 }

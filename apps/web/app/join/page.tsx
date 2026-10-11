@@ -24,10 +24,10 @@ export default function Page() {
                 학교 구글 계정으로 가입과 재등록을 진행합니다.
               </p>
               <Badge variant="warning" className="mt-5">
-                온라인 신청 준비 중
+                가입 · 재등록 신청
               </Badge>
               <p className="mt-3 text-sm text-muted-foreground">
-                모집 기간·회비·납부 계좌는 운영진 확인 후 안내합니다.
+                내 활동에서 이번 학기 모집 기간·회비·납부 계좌를 확인하세요.
               </p>
               <LoginButton className="mt-6">가입 · 재등록 안내</LoginButton>
             </div>
