@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown, Code2, Menu, UserRound, Users, X } from "lucide-react"
+import { ChevronDown, Menu, UserRound, X } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -8,27 +8,6 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@comit/ui/components/button"
 
 import { useHeaderAccount } from "@/components/use-header-account"
-
-const groups = [
-  {
-    label: "코밋 소개",
-    caption: "ABOUT COMIT",
-    items: [
-      {
-        label: "코밋 알아보기",
-        description: "서로 다른 시작점에서 함께 성장하는 우리",
-        href: "/about",
-        icon: Users,
-      },
-      {
-        label: "가입 안내",
-        description: "코밋과 함께하는 첫걸음",
-        href: "/join",
-        icon: Code2,
-      },
-    ],
-  },
-] as const
 
 const links = [
   ["스터디", "/studies"],
@@ -47,7 +26,6 @@ export function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const headerRef = useRef<HTMLElement>(null)
   const mobileTrigger = useRef<HTMLButtonElement>(null)
-  const groupTriggers = useRef<Record<string, HTMLButtonElement | null>>({})
   const close = () => {
     setOpenGroup(null)
     setMobileOpen(false)
@@ -77,7 +55,6 @@ export function SiteHeader() {
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           if (openGroup === "account") accountTrigger.current?.focus()
-          else if (openGroup) groupTriggers.current[openGroup]?.focus()
           else if (mobileOpen) mobileTrigger.current?.focus()
           close()
         }
@@ -94,63 +71,6 @@ export function SiteHeader() {
           CoMit<span className="text-primary">.</span>
         </Link>
         <nav aria-label="주 메뉴" className="hidden items-center gap-3 xl:flex">
-          {groups.map((group) => (
-            <div key={group.label}>
-              <Button
-                ref={(element) => {
-                  groupTriggers.current[group.label] = element
-                }}
-                variant="ghost"
-                className="h-10 gap-2 px-3"
-                aria-expanded={openGroup === group.label}
-                aria-controls={`header-${group.caption.replaceAll(" ", "-")}`}
-                onClick={() =>
-                  setOpenGroup(openGroup === group.label ? null : group.label)
-                }
-              >
-                {group.label}
-                <ChevronDown
-                  aria-hidden
-                  className={`size-4 transition-transform motion-reduce:transition-none ${openGroup === group.label ? "rotate-180" : ""}`}
-                />
-              </Button>
-              {openGroup === group.label && (
-                <div
-                  id={`header-${group.caption.replaceAll(" ", "-")}`}
-                  className="absolute top-[calc(100%-4px)] left-1/2 w-[600px] -translate-x-1/2 rounded-xl border bg-background p-6 shadow-lg"
-                >
-                  <p className="mb-4 text-xs font-medium tracking-wider text-muted-foreground">
-                    {group.caption}
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {group.items.map((item) => (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        aria-current={
-                          pathname === item.href ? "page" : undefined
-                        }
-                        onClick={close}
-                        className="flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                      >
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-primary">
-                          <item.icon aria-hidden className="size-5" />
-                        </span>
-                        <span>
-                          <span className="block text-sm font-semibold">
-                            {item.label}
-                          </span>
-                          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                            {item.description}
-                          </span>
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
           {links.map(([label, href]) => (
             <Link
               key={href}
@@ -276,29 +196,6 @@ export function SiteHeader() {
           aria-label="모바일 메뉴"
           className="max-h-[calc(100dvh-72px)] overflow-y-auto border-t px-6 py-5 xl:hidden"
         >
-          {groups.map((group) => (
-            <div key={group.label} className="mb-4">
-              <p className="mb-2 px-3 text-xs font-semibold text-muted-foreground">
-                {group.label}
-              </p>
-              {group.items.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  aria-current={pathname === item.href ? "page" : undefined}
-                  onClick={close}
-                  className="block rounded-lg px-3 py-3 hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                >
-                  <span className="block text-sm font-medium">
-                    {item.label}
-                  </span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    {item.description}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          ))}
           {links.map(([label, href]) => (
             <Link
               key={href}
