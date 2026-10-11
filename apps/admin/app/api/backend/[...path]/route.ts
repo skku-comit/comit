@@ -8,7 +8,9 @@ async function proxy(
 ) {
   try {
     const { path } = await context.params
-    if (!["users", "memberships", "semesters"].includes(path[0] ?? ""))
+    if (
+      !["users", "memberships", "semesters", "studies"].includes(path[0] ?? "")
+    )
       return NextResponse.json(
         { message: "잘못된 경로입니다." },
         { status: 404 }

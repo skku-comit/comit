@@ -23,6 +23,7 @@ pnpm --filter @comit/api db:deploy
 ```
 
 - `DATABASE_URL`: API 런타임 직접 연결 주소. `schema=comit&sslmode=require`를 지정한다.
+- 세션 풀러의 간헐적인 초기 연결 실패에는 런타임 URL의 `connect_timeout=20&connection_limit=5&pool_timeout=20` 설정을 사용할 수 있다. 연결 설정 변경 후 API를 재시작한다. 마이그레이션용 `DIRECT_DATABASE_URL`은 별도로 유지한다.
 - `DIRECT_DATABASE_URL`: 마이그레이션 직접 연결 주소. 첫 구성에서는 같은 주소를 사용할 수 있다.
 - `db:deploy`: 저장소의 마이그레이션 적용. 운영에서는 이 명령을 사용한다.
 - `db:migrate`: 개발 DB에서만 새 마이그레이션 작성. 전용 shadow DB 또는 스키마 생성 권한을 별도로 준비한다.

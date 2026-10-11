@@ -38,10 +38,6 @@
     "vite": "8.3.3"
   },
   "exports": {
-    "./globals.css": "./src/styles/globals.css",
-    "./postcss.config": "./postcss.config.mjs",
-    "./lib/*": "./src/lib/*.ts",
-    "./hooks/*": "./src/hooks/*.ts",
     "./components/alert": "./src/components/alert.tsx",
     "./components/badge": "./src/components/badge.tsx",
     "./components/button": "./src/components/button.tsx",
@@ -51,13 +47,19 @@
     "./components/empty-state": "./src/components/empty-state.tsx",
     "./components/field": "./src/components/field.tsx",
     "./components/input": "./src/components/input.tsx",
-    "./components/radio-group": "./src/components/radio-group.tsx",
+    "./components/pagination": "./src/components/pagination.tsx",
     "./components/radio": "./src/components/radio.tsx",
+    "./components/radio-group": "./src/components/radio-group.tsx",
     "./components/select": "./src/components/select.tsx",
+    "./components/separator": "./src/components/separator.tsx",
     "./components/skeleton": "./src/components/skeleton.tsx",
     "./components/switch": "./src/components/switch.tsx",
     "./components/table": "./src/components/table.tsx",
     "./components/tabs": "./src/components/tabs.tsx",
-    "./components/textarea": "./src/components/textarea.tsx"
+    "./components/textarea": "./src/components/textarea.tsx",
+    "./globals.css": "./src/styles/globals.css",
+    "./hooks/*": "./src/hooks/*.ts",
+    "./lib/*": "./src/lib/*.ts",
+    "./postcss.config": "./postcss.config.mjs"
   }
 }

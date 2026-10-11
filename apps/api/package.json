@@ -8,14 +8,14 @@
     "start": "node dist/main.js",
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
-    "test": "pnpm build && node --test test/*.test.cjs test/*.integration.cjs",
+    "test": "pnpm build && node --test --test-concurrency=1 test/*.test.cjs test/*.integration.cjs",
     "db:generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "prebuild": "prisma generate",
     "predev": "prisma generate",
     "pretypecheck": "prisma generate",
-    "test:integration": "node --test test/memberships.integration.cjs"
+    "test:integration": "node --test --test-concurrency=1 test/*.integration.cjs"
   },
   "dependencies": {
     "@comit/contracts": "workspace:*",

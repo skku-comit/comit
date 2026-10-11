@@ -21,6 +21,8 @@ model User {
   academicStatus String
   academicOther  String?
   campus         String
+  studies        Study[]
+  studyApplications StudyApplication[]
   memberships    Membership[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -45,6 +47,7 @@ model Semester {
   accountHolder     String
   consentText       String
   consentVersion    String
+  studies           Study[]
   memberships       Membership[]
   createdAt         DateTime     @default(now())
 
@@ -90,5 +93,50 @@ model AuditLog {
 
   @@index([entityId, createdAt])
   @@map("audit_logs")
+  @@schema("comit")
+}
+
+model Study {
+  isLegacy Boolean @default(false)
+  id String @id @default(uuid()) @db.Uuid
+  semesterId String @db.Uuid
+  representativeId String? @db.Uuid
+  type String
+  title String
+  description String
+  audience String
+  format String
+  schedule String
+  location String
+  resourceUrl String?
+  startsAt DateTime
+  endsAt DateTime
+  capacity Int
+  status String @default("PENDING")
+  reason String?
+  version Int @default(0)
+  semester Semester @relation(fields: [semesterId], references: [id], onDelete: Restrict)
+  representative User? @relation(fields: [representativeId], references: [id], onDelete: Restrict)
+  applications StudyApplication[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([semesterId, status])
+  @@map("studies")
+  @@schema("comit")
+}
+model StudyApplication {
+  id String @id @default(uuid()) @db.Uuid
+  studyId String @db.Uuid
+  userId String @db.Uuid
+  motivation String
+  status String @default("PENDING")
+  reason String?
+  version Int @default(0)
+  study Study @relation(fields: [studyId], references: [id], onDelete: Restrict)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([studyId, userId])
+  @@map("study_applications")
   @@schema("comit")
 }

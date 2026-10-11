@@ -8,7 +8,9 @@ async function proxy(
 ) {
   try {
     const { path } = await context.params
-    if (!["users", "memberships", "semesters"].includes(path[0] ?? ""))
+    if (
+      !["users", "memberships", "semesters", "studies"].includes(path[0] ?? "")
+    )
       return NextResponse.json(
         { message: "잘못된 경로입니다." },
         { status: 404 }
@@ -21,9 +23,16 @@ async function proxy(
         { message: "허용되지 않은 요청입니다." },
         { status: 403 }
       )
-    const client = await supabase()
-    const { data, error } = await client.auth.getSession()
-    if (error || !data.session)
+    const publicStudy =
+      request.method === "GET" &&
+      path[0] === "studies" &&
+      (path.length === 1 ||
+        (path.length === 2 && /^[0-9a-f-]{36}$/i.test(path[1] ?? "")))
+    const client = publicStudy ? null : await supabase()
+    const { data, error } = client
+      ? await client.auth.getSession()
+      : { data: { session: null }, error: null }
+    if (!publicStudy && (error || !data.session))
       return NextResponse.json(
         { message: "로그인이 필요합니다." },
         { status: 401 }
@@ -33,7 +42,9 @@ async function proxy(
       {
         method: request.method,
         headers: {
-          Authorization: `Bearer ${data.session.access_token}`,
+          ...(data.session
+            ? { Authorization: `Bearer ${data.session.access_token}` }
+            : {}),
           "Content-Type": "application/json",
         },
         body: request.method === "GET" ? undefined : await request.text(),

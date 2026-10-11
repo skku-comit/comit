@@ -89,6 +89,12 @@ export default function MyPage() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-16">
       <h1 className="text-3xl font-bold">내 활동 · 가입 신청</h1>
+      <Link
+        href="/studies/mine"
+        className="mt-4 inline-block text-primary underline"
+      >
+        내 스터디 · 개설 및 참여 관리
+      </Link>
       {error && (
         <p role="alert" className="my-4 text-destructive">
           {error}

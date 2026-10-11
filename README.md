@@ -50,7 +50,7 @@ pnpm build
 
 첫 작업: [0001-project-setup.md](docs/tasks/0001-project-setup.md).
 
-부원 관리의 DB·학교 로그인·API·관리자 설정은 [부원 관리 실행 안내](docs/user-management-setup.md)를 참고한다. 배포·CI와 나머지 도메인은 후속 task에서 정의한다.
+부원 관리의 DB·학교 로그인·API·관리자 설정은 [부원 관리 실행 안내](docs/user-management-setup.md)를 참고한다. 스터디 DB·등록·승인·선발 절차는 [스터디 운영 실행 안내](docs/study-management-setup.md)를 참고한다. 배포·CI와 나머지 도메인은 후속 task에서 정의한다.
 
 ## 디자인 시스템
 

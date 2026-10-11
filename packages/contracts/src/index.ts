@@ -80,3 +80,72 @@ export interface HistoricalMembershipInput {
   userId: string
   semesterId: string
 }
+
+export type StudyType = "REGULAR" | "AUTONOMOUS"
+export type StudyStatus = "PENDING" | "APPROVED" | "REJECTED"
+export type StudyApplicationStatus =
+  "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | "WITHDRAWN"
+export interface StudyInput {
+  title: string
+  description: string
+  audience: string
+  format: string
+  schedule: string
+  location: string
+  resourceUrl: string | null
+  startsAt: string
+  endsAt: string
+  /** 정규 스터디는 0이면 정원 제한 없음. 자율 스터디는 1 이상. */
+  capacity: number
+}
+export interface StudyRecord extends StudyInput {
+  /** 기존 운영 자료: 신청 종료, 미확인 과거 모집 날짜는 표시하지 않음. */
+  isLegacy?: boolean
+  id: string
+  semesterId: string
+  type: StudyType
+  status: StudyStatus
+  version: number
+  participantCount: number
+  semester: { id: string; name: string; isCurrent: boolean }
+}
+export interface ManagedStudyRecord extends StudyRecord {
+  representativeId: string | null
+  reason: string | null
+}
+export interface StudyApplicationRecord {
+  id: string
+  studyId: string
+  userId: string
+  motivation: string
+  status: StudyApplicationStatus
+  reason: string | null
+  version: number
+  user?: { name: string; studentId: string; department: string }
+}
+export interface MyStudiesResponse {
+  studies: ManagedStudyRecord[]
+  applications: (StudyApplicationRecord & { study: StudyRecord })[]
+}
+
+export interface StudyUpdateInput extends StudyInput {
+  version: number
+}
+export interface AdminStudyInput extends StudyInput {
+  semesterId: string
+  type: StudyType
+  representativeId?: string | null
+}
+export type StudyReviewInput =
+  | { action: "APPROVE"; version: number }
+  | { action: "REJECT"; version: number; reason: string }
+export interface StudyApplicationInput {
+  motivation: string
+}
+export type StudyApplicationActionInput =
+  | { action: "APPROVE" | "CANCEL" | "WITHDRAW"; version: number }
+  | { action: "REJECT"; version: number; reason: string }
+export interface StudyManagementResponse {
+  study: ManagedStudyRecord
+  applications: StudyApplicationRecord[]
+}

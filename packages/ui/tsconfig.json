@@ -3,7 +3,8 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "~/*": ["../../*"]
+      "~/*": ["../../*"],
+      "@comit/ui/*": ["./src/*"]
     },
     "module": "ESNext",
     "moduleResolution": "Bundler"

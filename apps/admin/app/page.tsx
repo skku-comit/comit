@@ -182,6 +182,9 @@ export default function Admin() {
   return (
     <main className="mx-auto max-w-6xl space-y-6 px-6 py-10">
       <header className="flex items-center justify-between">
+        <a href="/studies" className="mb-4 block text-primary underline">
+          스터디 관리
+        </a>
         <h1 className="text-3xl font-bold">CoMit 부원 관리</h1>
         {me && (
           <form method="post" action="/auth/logout">

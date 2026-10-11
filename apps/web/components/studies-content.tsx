@@ -1,158 +1,322 @@
 "use client"
 
-import { ArrowRight } from "lucide-react"
-import { useState } from "react"
+import { ArrowRight, BookOpen, Search, Users } from "lucide-react"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 
+import type { PageResult, StudyRecord } from "@comit/contracts"
 import { Badge } from "@comit/ui/components/badge"
 import { Button } from "@comit/ui/components/button"
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@comit/ui/components/card"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@comit/ui/components/dialog"
 import { Input } from "@comit/ui/components/input"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@comit/ui/components/pagination"
 
-const studies = [
-  {
-    title: "Python 기초",
-    type: "정규",
-    tag: "프로그래밍 입문",
-    mark: "Py",
-    text: "문법을 익히고 작은 실습을 함께 풀며 프로그래밍의 첫걸음을 시작해요.",
-  },
-  {
-    title: "C 프로그래밍",
-    type: "정규",
-    tag: "프로그래밍 기초",
-    mark: "C",
-    text: "C의 기본 문법과 메모리 개념을 공부하며 컴퓨터의 동작을 이해해요.",
-  },
-  {
-    title: "AI 함께 읽기",
-    type: "자율",
-    tag: "AI · 딥러닝",
-    mark: "AI",
-    text: "딥러닝과 AI 논문 등 관심 있는 주제를 골라 함께 읽고 생각을 나눠요.",
-  },
-]
+import {
+  StudyCardsSkeleton,
+  StudyCreateButton,
+  StudyEmpty,
+  StudyError,
+  StudyPage,
+} from "@/components/study-ui"
+import { api } from "@/lib/api"
 
 export function StudiesContent() {
-  const [filter, setFilter] = useState("전체")
+  const [now, setNow] = useState(0)
+  const [type, setType] = useState("")
   const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<(typeof studies)[number] | null>(
-    null
-  )
-  const visibleStudies = studies.filter(
-    (study) =>
-      (filter === "전체" || study.type === filter) &&
-      `${study.title} ${study.tag}`.toLowerCase().includes(query.toLowerCase())
-  )
-
+  const [page, setPage] = useState(1)
+  const [result, setResult] = useState<PageResult<StudyRecord>>()
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [retry, setRetry] = useState(0)
+  useEffect(() => {
+    let active = true
+    const timer = setTimeout(() => {
+      setLoading(true)
+      setError("")
+      setNow(Date.now())
+      api<PageResult<StudyRecord>>(
+        `studies?page=${page}&q=${encodeURIComponent(query)}${type ? `&type=${type}` : ""}`
+      )
+        .then((r) => {
+          if (active) setResult(r)
+        })
+        .catch((e) => {
+          if (active) setError(e.message)
+        })
+        .finally(() => {
+          if (active) setLoading(false)
+        })
+    }, 200)
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [page, query, type, retry])
+  function reset() {
+    setQuery("")
+    setType("")
+    setPage(1)
+    setLoading(true)
+  }
   return (
-    <>
-      <section id="studies" className="border-y bg-muted/40">
-        <div className="mx-auto max-w-6xl px-6 py-20">
-          <p className="text-sm font-semibold text-primary">STUDY TOGETHER</p>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight">
-            관심이 배움이 되는 곳.
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            운영진이 구성하는 정규 스터디, 부원이 함께 여는 자율 스터디.
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            아래는 활동 주제를 소개하는 예시입니다. 실제 학기별 개설 목록과 모집
-            일정은 준비 중입니다.
-          </p>
-          <div className="mt-7 flex flex-col justify-between gap-4 sm:flex-row">
-            <div className="flex gap-2" aria-label="스터디 유형 필터">
-              {["전체", "정규", "자율"].map((type) => (
-                <Button
-                  key={type}
-                  variant={filter === type ? "default" : "outline"}
-                  aria-pressed={filter === type}
-                  onClick={() => setFilter(type)}
-                >
-                  {type === "전체" ? type : `${type} 스터디`}
-                </Button>
-              ))}
-            </div>
-            <Input
-              aria-label="스터디 검색"
-              placeholder="관심 있는 주제를 검색해 보세요"
-              value={query}
-              onValueChange={setQuery}
-              className="sm:max-w-xs"
-            />
-          </div>
-          <div className="mt-6 grid gap-5 md:grid-cols-3">
-            {visibleStudies.map((study) => (
-              <Card key={study.title}>
-                <CardHeader>
-                  <div className="mb-5 flex items-center justify-between">
-                    <span
-                      className="flex size-14 items-center justify-center rounded-xl bg-success-subtle text-xl font-bold text-success"
-                      aria-hidden
-                    >
-                      {study.mark}
-                    </span>
-                    <Badge>{study.type} 스터디</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{study.tag}</p>
-                  <CardTitle>{study.title}</CardTitle>
-                  <CardDescription>{study.text}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setSelected(study)}
-                  >
-                    자세히 보기 <ArrowRight aria-hidden />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          {visibleStudies.length === 0 && (
-            <p
-              role="status"
-              className="py-12 text-center text-muted-foreground"
+    <StudyPage
+      title="관심이 배움이 되는 곳."
+      description="운영진이 구성하는 정규 스터디, 부원이 함께 여는 자율 스터디. 나에게 맞는 주제를 찾아 함께 배워 보세요."
+      actions={
+        <>
+          <Button
+            variant="outline"
+            render={<Link href="/studies/mine" />}
+            nativeButton={false}
+          >
+            <Users aria-hidden />내 스터디
+          </Button>
+          <StudyCreateButton />
+        </>
+      }
+    >
+      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex gap-2" role="group" aria-label="스터디 유형 필터">
+          {[
+            ["", "전체"],
+            ["REGULAR", "정규"],
+            ["AUTONOMOUS", "자율"],
+          ].map(([value, label]) => (
+            <Button
+              key={value}
+              aria-pressed={type === value}
+              variant={type === value ? "default" : "outline"}
+              onClick={() => {
+                setType(value!)
+                setPage(1)
+                setLoading(true)
+              }}
             >
-              검색 결과가 없습니다. 다른 주제나 유형으로 찾아보세요.
-            </p>
-          )}
+              {label}
+            </Button>
+          ))}
         </div>
-      </section>
-      <Dialog
-        open={selected !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelected(null)
-        }}
-      >
-        <DialogContent>
-          <Badge>{selected?.type} 스터디 · 소개 예시</Badge>
-          <DialogTitle>{selected?.title}</DialogTitle>
-          <DialogDescription>{selected?.text}</DialogDescription>
-          <p className="text-sm">
-            {selected?.type === "정규"
-              ? "운영진이 조를 구성하며 회차별 진행 담당자가 준비한 내용을 함께 공부하고 실습합니다."
-              : "부원이 관심 있는 주제로 스터디를 제안하고 구성원과 함께 학습 방향을 정합니다."}
+        <div className="relative sm:w-80">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-3 left-3 size-4 text-muted-foreground"
+          />
+          <Input
+            aria-label="스터디 검색"
+            placeholder="관심 있는 주제를 검색해 보세요"
+            value={query}
+            onValueChange={(value) => {
+              setQuery(value)
+              setPage(1)
+              setLoading(true)
+            }}
+            className="pl-9"
+          />
+        </div>
+      </div>
+      {loading ? (
+        <StudyCardsSkeleton />
+      ) : error ? (
+        <StudyError
+          message={error}
+          retry={() => {
+            setLoading(true)
+            setRetry(retry + 1)
+          }}
+        />
+      ) : !result?.items.length ? (
+        <StudyEmpty
+          title={
+            query || type
+              ? "검색 결과가 없어요"
+              : "새로운 스터디를 준비하고 있어요"
+          }
+          description={
+            query || type
+              ? "다른 주제나 유형으로 찾아보세요."
+              : "개설된 스터디가 공개되면 이곳에서 확인할 수 있어요. 관심 있는 주제가 있다면 직접 제안해 보세요."
+          }
+        >
+          {query || type ? (
+            <Button variant="outline" onClick={reset}>
+              필터 초기화
+            </Button>
+          ) : (
+            <StudyCreateButton />
+          )}
+        </StudyEmpty>
+      ) : (
+        <>
+          <p className="mb-4 text-sm text-muted-foreground" aria-live="polite">
+            {result.total}개의 스터디
           </p>
-          <p className="text-sm text-muted-foreground">
-            실제 개설 여부와 신청 일정은 학기별 모집 공고에서 안내합니다.
-          </p>
-          <DialogClose>닫기</DialogClose>
-        </DialogContent>
-      </Dialog>
-    </>
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {result.items.map((s) => {
+              const status =
+                s.isLegacy || now >= Date.parse(s.endsAt)
+                  ? "모집 종료"
+                  : s.type === "REGULAR"
+                    ? "정규 스터디 안내"
+                    : now < Date.parse(s.startsAt)
+                      ? "모집 예정"
+                      : now >= Date.parse(s.endsAt)
+                        ? "모집 종료"
+                        : s.participantCount >= s.capacity
+                          ? "정원 마감"
+                          : "모집 중"
+              return (
+                <Card
+                  key={s.id}
+                  className="flex min-w-0 flex-col transition-colors hover:shadow-md"
+                >
+                  <CardHeader>
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <span
+                        aria-hidden
+                        className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${s.type === "REGULAR" ? "bg-success-subtle text-success" : "bg-info-subtle text-info"}`}
+                      >
+                        {s.type === "REGULAR" ? (
+                          <BookOpen className="size-6" />
+                        ) : (
+                          <Users className="size-6" />
+                        )}
+                      </span>
+                      <Badge
+                        variant={
+                          status === "모집 중"
+                            ? "success"
+                            : status === "모집 예정"
+                              ? "info"
+                              : "default"
+                        }
+                      >
+                        {status}
+                      </Badge>
+                    </div>
+                    <div className="mb-1 flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={s.type === "REGULAR" ? "success" : "info"}
+                      >
+                        {s.type === "REGULAR" ? "정규 스터디" : "자율 스터디"}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {s.semester.name}
+                      </span>
+                    </div>
+                    <CardTitle className="break-words">
+                      <Link
+                        href={`/studies/${s.id}`}
+                        className="rounded-sm transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-ring"
+                      >
+                        {s.title}
+                      </Link>
+                    </CardTitle>
+                    <CardDescription className="line-clamp-3 min-h-16 break-words whitespace-pre-wrap">
+                      {s.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users aria-hidden className="size-4 shrink-0" />
+                      <span>
+                        {s.isLegacy
+                          ? `정원 ${s.capacity}명`
+                          : s.type === "AUTONOMOUS"
+                            ? `${s.participantCount}/${s.capacity}명 참여 중`
+                            : s.capacity === 0
+                              ? "정원 제한 없음"
+                              : `정원 ${s.capacity}명`}
+                      </span>
+                    </div>
+                    <p className="mt-2 truncate text-sm text-muted-foreground">
+                      {s.audience}
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      render={<Link href={`/studies/${s.id}`} />}
+                      nativeButton={false}
+                      aria-label={`${s.title} 자세히 보기`}
+                    >
+                      자세히 보기
+                      <ArrowRight aria-hidden />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )
+            })}
+          </div>
+          {result.total > result.pageSize && (
+            <Pagination className="mt-10" aria-label="스터디 페이지">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    text="이전"
+                    aria-label="이전 페이지"
+                    href={`?page=${page - 1}`}
+                    aria-disabled={page === 1}
+                    tabIndex={page === 1 ? -1 : undefined}
+                    className={
+                      page === 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (page > 1) {
+                        setPage(page - 1)
+                        setLoading(true)
+                      }
+                    }}
+                  />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="px-4 text-sm text-muted-foreground">
+                    {page} / {Math.ceil(result.total / result.pageSize)}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext
+                    text="다음"
+                    aria-label="다음 페이지"
+                    href={`?page=${page + 1}`}
+                    aria-disabled={page * result.pageSize >= result.total}
+                    tabIndex={
+                      page * result.pageSize >= result.total ? -1 : undefined
+                    }
+                    className={
+                      page * result.pageSize >= result.total
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                    onClick={(e) => {
+                      e.preventDefault()
+                      if (page * result.pageSize < result.total) {
+                        setPage(page + 1)
+                        setLoading(true)
+                      }
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
+      )}
+    </StudyPage>
   )
 }
