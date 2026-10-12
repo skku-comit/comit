@@ -161,7 +161,7 @@ export function SiteHeader() {
                 className="h-10 px-2 sm:px-3"
                 onClick={close}
               >
-                부원 가입
+                회원가입
               </Button>
               <Button
                 render={<Link href="/login" />}
