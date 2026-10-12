@@ -146,54 +146,6 @@ export default function Page() {
         </div>
       </section>
 
-      <section className={styles.nameSection} aria-labelledby="name-title">
-        <div className={styles.container}>
-          <div className={styles.nameLayout}>
-            <div>
-              <p className={styles.eyebrow}>OUR NAME</p>
-              <h2 id="name-title">우리의 이름, CoMit</h2>
-              <p className={styles.description}>
-                코드로 만나, 함께 더 높은 곳을 향한다는 뜻을 담았습니다.
-              </p>
-            </div>
-            <div className={styles.nameMeaning} aria-hidden="true">
-              <p className={styles.nameFormula}>
-                <span>Code</span>
-                <span className={styles.namePlus}>+</span>
-                <span>Summit</span>
-              </p>
-              <p className={styles.nameResult}>
-                CoMit<span className={styles.accent}>.</span>
-              </p>
-            </div>
-          </div>
-          <dl className={styles.nameDetails}>
-            <div>
-              <dt>Code + Summit</dt>
-              <dd>
-                코드를 뜻하는 Code와 정상을 뜻하는 Summit을 합친 이름입니다.
-                서로의 지식과 경험을 연결해 함께 더 높은 곳을 향합니다.
-              </dd>
-            </div>
-            <div>
-              <dt>commit</dt>
-              <dd>
-                코드의 변경 사항을 기록하는 commit과 닮은 발음입니다. 작은
-                기여가 모여 하나의 프로젝트가 되듯, 각자의 배움과 도전이 코밋의
-                다음 발걸음이 됩니다.
-              </dd>
-            </div>
-            <div>
-              <dt>Co + Mit</dt>
-              <dd>
-                함께를 뜻하는 Co. 사람과 사람을 잇고, 배우고 만드는 경험을
-                나누는 코밋의 방향을 나타냅니다.
-              </dd>
-            </div>
-          </dl>
-        </div>
-      </section>
-
       <section
         id="activities"
         className={`${styles.container} ${styles.section}`}
