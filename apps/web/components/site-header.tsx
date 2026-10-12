@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react"
 import { Button } from "@comit/ui/components/button"
 
 import { useHeaderAccount } from "@/components/use-header-account"
+import { apiUrl } from "@/lib/backend"
 
 const links = [
   ["스터디", "/studies"],
@@ -135,7 +136,7 @@ export function SiteHeader() {
                   >
                     내 활동
                   </Link>
-                  <form action="/auth/logout" method="post">
+                  <form action={apiUrl("auth/logout")} method="post">
                     <Button
                       type="submit"
                       variant="ghost"

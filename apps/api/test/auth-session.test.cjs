@@ -11,11 +11,19 @@ const {
 } = require("node:crypto")
 const { test } = require("node:test")
 require("./typescript.cjs")
-const { Controller, Get, Module, Req, UseGuards } = require("@nestjs/common")
+const {
+  Controller,
+  Get,
+  Post,
+  Module,
+  Req,
+  UseGuards,
+} = require("@nestjs/common")
 const { NestFactory } = require("@nestjs/core")
 const { AuthController } = require("../src/auth-session.ts")
 const { AuthGuard } = require("../src/auth.ts")
 const { ApiErrors } = require("../src/errors.ts")
+const { setupBrowser } = require("../src/browser.ts")
 
 class ProbeController {
   me(request) {
@@ -28,6 +36,15 @@ Get()(
   "me",
   Object.getOwnPropertyDescriptor(ProbeController.prototype, "me")
 )
+ProbeController.prototype.change = function (request) {
+  return this.me(request)
+}
+Post("change")(
+  ProbeController.prototype,
+  "change",
+  Object.getOwnPropertyDescriptor(ProbeController.prototype, "change")
+)
+Req()(ProbeController.prototype, "change", 0)
 Req()(ProbeController.prototype, "me", 0)
 UseGuards(AuthGuard)(ProbeController)
 class TestModule {}
@@ -128,111 +145,208 @@ test("API owns PKCE login, sealed sessions, refresh and logout across HTTP reque
   process.env.AUTH_SESSION_SECRET = "ab".repeat(32)
   process.env.AUTH_ALLOWED_ORIGINS =
     "http://localhost:3000,http://localhost:3001"
+  process.env.API_PUBLIC_URL = "https://api.example"
   process.env.ADMIN_EMAILS = "admin@g.skku.edu"
   const app = await NestFactory.create(TestModule, { logger: false })
   app.useGlobalFilters(new ApiErrors())
+  setupBrowser(app)
   await app.listen(0, "127.0.0.1")
   const url = await app.getUrl()
   const origin = "http://localhost:3000"
-  const post = (path, body, session) =>
-    fetch(`${url}/auth/${path}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-comit-origin": origin,
-        ...(session ? { "x-comit-session": session } : {}),
-      },
-      body: JSON.stringify(body),
+  const cookieFrom = (response, prefix) =>
+    response.headers
+      .getSetCookie()
+      .find((value) => value.startsWith(prefix))
+      ?.split(";")[0]
+  const valueOf = (cookie) =>
+    decodeURIComponent(cookie.slice(cookie.indexOf("=") + 1))
+  const replaceCookie = (cookie, value) => `${cookie.split("=")[0]}=${value}`
+  const start = (site = origin, destination = "/my") =>
+    fetch(
+      `${url}/auth/login?origin=${encodeURIComponent(site)}&destination=${encodeURIComponent(destination)}`,
+      { redirect: "manual" }
+    )
+  const finish = (callback, cookie, code = "good-code") => {
+    const target = new URL(callback)
+    target.searchParams.set("code", code)
+    return fetch(`${url}${target.pathname}${target.search}`, {
+      headers: cookie ? { Cookie: cookie } : {},
+      redirect: "manual",
     })
-  const me = (session, site = origin) =>
-    fetch(`${url}/probe`, {
-      headers: { "x-comit-session": session, "x-comit-origin": site },
+  }
+  const me = (cookie, site = origin, method = "GET") =>
+    fetch(`${url}/probe${method === "POST" ? "/change" : ""}`, {
+      method,
+      headers: {
+        ...(cookie ? { Cookie: cookie } : {}),
+        ...(site ? { Origin: site } : {}),
+      },
     })
   try {
+    assert.equal((await start("https://attacker.example")).status, 400)
+    const preflight = await fetch(`${url}/probe/change`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: origin,
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+      },
+    })
+    assert.equal(preflight.status, 204)
+    assert.equal(preflight.headers.get("access-control-allow-origin"), origin)
     assert.equal(
-      (await post("login", { origin: "https://attacker.example" })).status,
-      400
+      preflight.headers.get("access-control-allow-credentials"),
+      "true"
     )
-    const start = await post("login", { origin })
-    assert.equal(start.status, 200)
-    assert.equal(start.headers.get("cache-control"), "no-store")
-    const login = await start.json()
-    const authorize = new URL(login.url)
+    assert.ok(preflight.headers.get("vary").includes("Origin"))
+    const login = await start()
+    assert.equal(login.status, 302)
+    assert.equal(login.headers.get("cache-control"), "no-store")
+    const authorize = new URL(login.headers.get("location"))
     challenge = authorize.searchParams.get("code_challenge")
     assert.ok(challenge)
-    assert.equal(authorize.searchParams.get("code_challenge_method"), "s256")
     const callback = new URL(authorize.searchParams.get("redirect_to"))
-    assert.equal(callback.origin, origin)
-    const flowId = decode(login.state).flowId
-    assert.ok(flowId)
-    assert.ok(!login.state.includes("code-verifier"))
-    const input = { origin, state: login.state, code: "good-code" }
+    assert.equal(callback.origin, "https://api.example")
+    assert.equal(callback.pathname, "/auth/callback")
+    assert.ok(callback.searchParams.get("login"))
+    const stateCookie = cookieFrom(login, "__Host-comit-login-")
+    assert.ok(stateCookie)
+    const flags = login.headers.getSetCookie()[0]
+    for (const flag of ["HttpOnly", "Secure", "SameSite=Lax", "Path=/"])
+      assert.ok(flags.includes(flag))
+    assert.ok(!flags.includes("Domain="))
+    assert.equal((await finish(callback, undefined)).status, 401)
     assert.equal(
-      (await post("callback", { ...input, state: "tampered" })).status,
+      (await finish(callback, replaceCookie(stateCookie, "tampered"))).status,
       401
     )
-    assert.equal(
-      (await post("callback", { ...input, origin: "http://localhost:3001" }))
-        .status,
-      401
+    const expiredState = replaceCookie(
+      stateCookie,
+      encode({ ...decode(valueOf(stateCookie)), expires: 0 })
     )
     assert.equal(
-      (
-        await post("callback", {
-          ...input,
-          state: encode({ ...decode(login.state), flowId: "wrong" }),
-        })
-      ).status,
-      401
+      (await finish(callback, expiredState)).headers.get("location"),
+      `${origin}/login?error=1`
     )
     assert.equal(
-      (await post("callback", { ...input, code: "bad-code" })).status,
-      401
+      (await finish(callback, stateCookie, "bad-code")).headers.get("location"),
+      `${origin}/login?error=1`
+    )
+    const exchange = await finish(callback, stateCookie)
+    assert.equal(exchange.status, 302)
+    assert.equal(exchange.headers.get("location"), `${origin}/my`)
+    assert.ok(
+      exchange.headers
+        .getSetCookie()
+        .some(
+          (value) =>
+            value.startsWith(stateCookie.split("=")[0]) &&
+            value.includes("Expires=Thu, 01 Jan 1970")
+        )
     )
     assert.equal(
-      (
-        await post("callback", {
-          ...input,
-          state: encode({ ...decode(login.state), expires: 0 }),
-        })
-      ).status,
-      401
+      await exchange.text(),
+      "Found. Redirecting to http://localhost:3000/my"
     )
-    const exchange = await post("callback", input)
-    assert.equal(exchange.status, 200)
-    const { session } = await exchange.json()
-    assert.ok(!session.includes("access-secret"))
+    const session = cookieFrom(exchange, "__Host-comit-session-")
+    assert.ok(session)
     const loggedIn = await me(session)
     assert.equal(loggedIn.status, 200)
     assert.equal((await loggedIn.json()).isAdmin, true)
+    assert.equal(loggedIn.headers.get("access-control-allow-origin"), origin)
     assert.equal((await me(session, "http://localhost:3001")).status, 401)
-    assert.equal((await me("tampered")).status, 401)
-    assert.equal(
-      (await me(encode({ ...decode(session), expires: 0 }))).status,
-      401
+    assert.equal((await me(session, "https://attacker.example")).status, 403)
+    assert.equal((await me(session, "", "POST")).status, 403)
+    assert.equal((await me(session, origin, "POST")).status, 201)
+    assert.equal((await me(replaceCookie(session, "tampered"))).status, 401)
+    const expired = await me(
+      replaceCookie(
+        session,
+        encode({ ...decode(valueOf(session)), expires: 0 })
+      )
     )
-    const expiredAccess = encode({ ...decode(session), tokenExpires: 0 })
+    assert.equal(expired.status, 401)
+    assert.ok(expired.headers.getSetCookie().length)
+    const expiredAccess = replaceCookie(
+      session,
+      encode({ ...decode(valueOf(session)), tokenExpires: 0 })
+    )
     const refreshed = await me(expiredAccess)
     assert.equal(refreshed.status, 200)
-    assert.ok(refreshed.headers.get("x-comit-session"))
-    assert.equal(
-      (await me(refreshed.headers.get("x-comit-session"))).status,
-      200
-    )
+    const renewed = cookieFrom(refreshed, "__Host-comit-session-")
+    assert.ok(renewed)
+    assert.equal(refreshed.headers.get("x-comit-session"), null)
+    assert.equal((await me(renewed)).status, 200)
     assert.equal(
       calls.filter((call) => call.url.includes("refresh_token")).length,
       1
     )
     foreign = true
     assert.equal((await me(session)).status, 403)
-    assert.equal((await post("callback", input)).status, 401)
+    assert.equal(
+      (await finish(callback, stateCookie)).headers.get("location"),
+      `${origin}/login?error=1`
+    )
     foreign = false
-    assert.equal((await post("logout", {}, session)).status, 200)
+    const adminLogin = await start("http://localhost:3001", "/")
+    const adminAuthorize = new URL(adminLogin.headers.get("location"))
+    challenge = adminAuthorize.searchParams.get("code_challenge")
+    const adminCallback = adminAuthorize.searchParams.get("redirect_to")
+    const adminExchange = await finish(
+      adminCallback,
+      cookieFrom(adminLogin, "__Host-comit-login-")
+    )
+    assert.equal(
+      adminExchange.headers.get("location"),
+      "http://localhost:3001/"
+    )
+    const adminSession = cookieFrom(adminExchange, "__Host-comit-session-")
+    assert.notEqual(adminSession.split("=")[0], session.split("=")[0])
+    assert.equal(
+      (await me(`${session}; ${adminSession}`, "http://localhost:3001")).status,
+      200
+    )
+    assert.equal((await me(`${session}; ${adminSession}`, origin)).status, 200)
+    assert.equal(
+      (
+        await fetch(`${url}/probe`, {
+          headers: {
+            "x-comit-session": valueOf(session),
+            "x-comit-origin": origin,
+          },
+        })
+      ).status,
+      401
+    )
+    const logout = await fetch(`${url}/auth/logout`, {
+      method: "POST",
+      headers: { Cookie: session, Origin: origin },
+      redirect: "manual",
+    })
+    assert.equal(logout.status, 303)
+    assert.equal(logout.headers.get("location"), `${origin}/login`)
+    assert.ok(
+      logout.headers
+        .getSetCookie()
+        .some(
+          (value) =>
+            value.startsWith(session.split("=")[0]) &&
+            value.includes("Expires=Thu, 01 Jan 1970")
+        )
+    )
     assert.ok(calls.some((call) => call.url === "/auth/v1/logout?scope=local"))
     assert.equal((await me(expiredAccess)).status, 401)
-    assert.equal((await post("logout", {})).status, 200)
+    assert.equal(
+      (
+        await fetch(`${url}/auth/logout`, {
+          method: "POST",
+          redirect: "manual",
+        })
+      ).status,
+      403
+    )
     delete process.env.AUTH_SESSION_SECRET
-    assert.equal((await post("login", { origin })).status, 503)
+    assert.equal((await start()).status, 503)
   } finally {
     await app.close()
     await new Promise((resolve) => auth.close(resolve))
@@ -242,6 +356,7 @@ test("API owns PKCE login, sealed sessions, refresh and logout across HTTP reque
       "AUTH_SESSION_SECRET",
       "AUTH_ALLOWED_ORIGINS",
       "ADMIN_EMAILS",
+      "API_PUBLIC_URL",
     ]) {
       if (previous[key] === undefined) delete process.env[key]
       else process.env[key] = previous[key]

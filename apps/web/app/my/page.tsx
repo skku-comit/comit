@@ -12,6 +12,7 @@ import { Button } from "@comit/ui/components/button"
 
 import { ProfileFields, profileFromForm } from "@/components/profile-fields"
 import { api, koreanDate, statusLabels } from "@/lib/api"
+import { apiUrl } from "@/lib/backend"
 
 export default function MyPage() {
   const [me, setMe] = useState<MeResponse>()
@@ -113,8 +114,10 @@ export default function MyPage() {
         <>
           <div className="my-6 flex items-center justify-between">
             <p>{me.email}</p>
-            <form action="/auth/logout" method="post">
-              <Button variant="outline">로그아웃</Button>
+            <form action={apiUrl("auth/logout")} method="post">
+              <Button type="submit" variant="outline">
+                로그아웃
+              </Button>
             </form>
           </div>
           {!semester && <p>현재 운영 학기가 없습니다.</p>}

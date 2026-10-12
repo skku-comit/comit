@@ -1,12 +1,16 @@
+import { apiUrl } from "./backend"
+
 export async function api<T>(
   path: string,
   body?: unknown,
   method = body ? "POST" : "GET",
   { redirectOnUnauthorized = true }: { redirectOnUnauthorized?: boolean } = {}
 ): Promise<T> {
-  const response = await fetch(`/api/backend/${path}`, {
+  const response = await fetch(apiUrl(path), {
+    credentials: "include",
+    cache: "no-store",
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   })
   if (response.status === 401 && redirectOnUnauthorized) {

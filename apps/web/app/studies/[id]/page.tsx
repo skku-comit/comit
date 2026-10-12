@@ -4,6 +4,7 @@ import type { StudyRecord } from "@comit/contracts"
 
 import { StudyDetail } from "@/components/study-detail"
 import { StudyBackLink, StudyError } from "@/components/study-ui"
+import { apiUrl } from "@/lib/backend"
 
 export default async function Page({
   params,
@@ -18,10 +19,10 @@ export default async function Page({
   let response: Response | undefined
   let study: StudyRecord | undefined
   try {
-    response = await fetch(
-      `${process.env.API_URL ?? "http://127.0.0.1:3002"}/studies/${id}`,
-      { cache: "no-store", signal: AbortSignal.timeout(15000) }
-    )
+    response = await fetch(apiUrl(`studies/${id}`), {
+      cache: "no-store",
+      signal: AbortSignal.timeout(15000),
+    })
     if (response.ok) study = (await response.json()) as StudyRecord
   } catch {
     /* The page displays connection errors below. */

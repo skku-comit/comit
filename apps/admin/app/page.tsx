@@ -16,6 +16,7 @@ import { Textarea } from "@comit/ui/components/textarea"
 
 import { ProfileFields, profileFromForm } from "@/components/profile-fields"
 import { api, statusLabels } from "@/lib/api"
+import { apiUrl } from "@/lib/backend"
 
 type Detail = MembershipRecord & {
   user: UserRecord
@@ -187,8 +188,10 @@ export default function Admin() {
         </a>
         <h1 className="text-3xl font-bold">CoMit 부원 관리</h1>
         {me && (
-          <form method="post" action="/auth/logout">
-            <Button variant="outline">로그아웃</Button>
+          <form method="post" action={apiUrl("auth/logout")}>
+            <Button type="submit" variant="outline">
+              로그아웃
+            </Button>
           </form>
         )}
       </header>

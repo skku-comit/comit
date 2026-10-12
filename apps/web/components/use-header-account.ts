@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 
 import type { MeResponse } from "@comit/contracts"
 
+import { apiUrl } from "@/lib/backend"
+
 export type HeaderAccount = { email: string; name?: string }
 
 export function useHeaderAccount() {
@@ -18,7 +20,8 @@ export function useHeaderAccount() {
       const controller = new AbortController()
       pending = controller
       try {
-        const response = await fetch("/api/backend/users/me", {
+        const response = await fetch(apiUrl("users/me"), {
+          credentials: "include",
           signal: controller.signal,
           cache: "no-store",
         })

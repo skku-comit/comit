@@ -2,16 +2,15 @@
 
 ## 구성
 
-| 서비스    | 배포 플랫폼                   | 운영 주소                       |
-| --------- | ----------------------------- | ------------------------------- |
-| web       | Vercel 프로젝트 `comit-web`   | `https://skkucomit.com`         |
-| admin     | Vercel 프로젝트 `comit-admin` | `https://admin.skkucomit.com`   |
-| api       | Cloudtype Dockerfile 서비스   | Cloudtype에서 발급한 HTTPS 주소 |
-| DB / Auth | 기존 Supabase 프로젝트        | 기존 프로젝트 유지              |
+| 서비스    | 배포 플랫폼                   | 운영 주소                     |
+| --------- | ----------------------------- | ----------------------------- |
+| web       | Vercel 프로젝트 `comit-web`   | `https://skkucomit.com`       |
+| admin     | Vercel 프로젝트 `comit-admin` | `https://admin.skkucomit.com` |
+| api       | Cloudtype Dockerfile 서비스   | `https://api.skkucomit.com`   |
+| DB / Auth | 기존 Supabase 프로젝트        | 기존 프로젝트 유지            |
 
 프로젝트 이름은 권장값이다. 웹·관리자 앱은 같은 GitHub 저장소를 각각 연결한다.
-브라우저 → 같은 도메인의 Next.js `/api/backend/*` → Cloudtype API 순서로 요청한다.
-`API_URL`은 서버 전용 환경 변수다. 별도의 `api.skkucomit.com` 연결이나 브라우저 CORS 허용 목록은 현재 구조에서 필요하지 않다.
+브라우저 → `https://api.skkucomit.com` → Supabase 순서로 요청한다. Next.js API 프록시와 인증 Route Handler는 사용하지 않는다. API가 호스트 전용 HttpOnly 쿠키를 발급하고 두 프론트 origin의 CORS와 상태 변경 Origin 검사를 처리한다. web·admin 세션 쿠키는 origin별로 구분한다. 브라우저 요청은 `credentials: include`를 사용한다.
 
 ## 1. 배포 코드 준비
 
@@ -41,6 +40,7 @@ Vercel은 현재 Node 24 / 22를 지원하므로 두 프론트 프로젝트에�
 | `DIRECT_DATABASE_URL`      | 마이그레이션용 DB 접속 URL                          |
 | `SUPABASE_URL`             | `https://<project-ref>.supabase.co`                 |
 | `SUPABASE_PUBLISHABLE_KEY` | 기존 프로젝트 publishable key                       |
+| `API_PUBLIC_URL`           | `https://api.skkucomit.com`                         |
 | `AUTH_SESSION_SECRET`      | `openssl rand -hex 32`로 생성한 64자리 hex 비밀 값  |
 | `AUTH_ALLOWED_ORIGINS`     | `https://skkucomit.com,https://admin.skkucomit.com` |
 | `ADMIN_EMAILS`             | 실제 관리자 학교 이메일, 여러 명이면 쉼표로 구분    |
@@ -51,7 +51,7 @@ DB URL에는 `schema=comit&sslmode=require`를 포함한다. Cloudtype에서 직
 
 Prisma·Nest CLI는 설치된 파일을 Node로 직접 실행한다. 컨테이너에서 `pnpm run`을 사용하면 pnpm의 의존성 확인 기능이 전체 workspace 설치를 다시 시작할 수 있기 때문이다. 실행 로그에 `Scope: all 6 workspace projects`와 Next.js·Storybook 다운로드가 나타나면 수정된 Dockerfile이 반영됐는지 확인한다. 이 변경은 기존 이미지의 재시작만으로 적용되지 않으며, GitHub에 수정된 Dockerfile을 올린 뒤 Cloudtype에서 새 이미지를 빌드하는 재배포가 필요하다.
 
-Cloudtype에서 발급한 HTTPS 주소를 복사한다. 해당 주소의 `/`에 접근하면 다음 응답이 나와야 한다.
+Cloudtype에 사용자 지정 도메인 `api.skkucomit.com`을 연결하고 안내된 DNS 레코드와 HTTPS 인증서 설정을 완료한다. Cloudflare DNS에는 Cloudtype이 지정한 대상을 사용한다. API 레코드는 DNS only로 시작한다. `https://api.skkucomit.com/`에 접근하면 다음 응답이 나와야 한다.
 
 ```json
 { "message": "comit API" }
@@ -86,15 +86,14 @@ Root Directory 설정의 **Include source files outside of the Root Directory in
 
 각 프로젝트의 **Production** 환경에 아래 값을 등록한다.
 
-| 변수                           | web                                 | admin                         |
-| ------------------------------ | ----------------------------------- | ----------------------------- |
-| `ENABLE_EXPERIMENTAL_COREPACK` | `1`                                 | `1`                           |
-| `SITE_URL`                     | `https://skkucomit.com`             | `https://admin.skkucomit.com` |
-| `API_URL`                      | Cloudtype HTTPS 주소, 끝의 `/` 제외 | 동일                          |
+| 변수                           | web                         | admin                         |
+| ------------------------------ | --------------------------- | ----------------------------- |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1`                         | `1`                           |
+| `SITE_URL`                     | `https://skkucomit.com`     | `https://admin.skkucomit.com` |
+| `NEXT_PUBLIC_API_URL`          | `https://api.skkucomit.com` | 동일                          |
 
-프론트에는 Supabase URL·키를 설정하지 않는다. 기존 `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 설정을 삭제하고 새 배포를 실행한다. API의 `AUTH_SESSION_SECRET`은 모든 레플리카·재시작에서 동일하게 유지한다. `AUTH_ALLOWED_ORIGINS`에는 실제 프론트 origin만 등록하며 Preview 도메인도 로그인에 사용할 경우 명시적으로 추가한다. 기존 Supabase 쿠키는 새 인증에 사용하지 않으므로 배포 후 다시 로그인한다.
-Production의 `SITE_URL`로는 도메인 연결 후 로그인·POST 요청을 확인한다. 임시 `*.vercel.app` 주소에서는 리디렉션·Origin 검사가 운영 도메인을 기준으로 동작한다.
-Preview에서 로그인을 검증하려면 별도의 고정 테스트 도메인, 해당 `SITE_URL`, Supabase callback 허용 URL을 설정한다.
+프론트에는 Supabase URL·키를 설정하지 않는다. 기존 `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`·`API_URL`을 삭제하고 `NEXT_PUBLIC_API_URL`을 추가해 새 배포를 실행한다. 공개 API 주소는 빌드 시 브라우저 코드에 포함되므로 환경 변수 변경 후 재빌드가 필요하다. API의 `AUTH_SESSION_SECRET`은 모든 레플리카·재시작에서 동일하게 유지한다. `AUTH_ALLOWED_ORIGINS`에는 실제 프론트 origin만 등록하며 Preview 도메인도 로그인에 사용할 경우 명시적으로 추가한다. 기존 Supabase 쿠키는 새 인증에 사용하지 않으므로 배포 후 다시 로그인한다.
+Production은 지정한 운영 도메인에서 로그인과 API 호출을 확인한다. Preview에서 쿠키 인증을 검증하려면 `preview.skkucomit.com`처럼 API와 같은 site의 고정 HTTPS 도메인을 사용하고 해당 `SITE_URL`과 API의 `AUTH_ALLOWED_ORIGINS`를 등록한다. `*.vercel.app`과 운영 API 조합은 cross-site이므로 SameSite=Lax 세션 쿠키를 사용할 수 없다. 로컬도 web·admin·API 호스트를 모두 `localhost`로 통일한다.
 
 ## 4. Cloudflare 도메인 연결
 
@@ -118,9 +117,9 @@ Vercel에 Valid Configuration이 표시되고 두 주소에서 HTTPS 접속이 �
 기존 Supabase 프로젝트의 Authentication → URL Configuration에서 설정한다.
 
 - Site URL: `https://skkucomit.com`
-- Redirect URLs: `https://skkucomit.com/auth/callback`
-- Redirect URLs: `https://admin.skkucomit.com/auth/callback`
-- 개발을 계속한다면 기존 localhost callback URL도 유지한다.
+- Redirect URLs: `https://api.skkucomit.com/auth/callback?login=*`
+- 개발용 Redirect URLs: `http://localhost:3002/auth/callback?login=*`
+- 이전 web·admin `/auth/callback` 허용 URL은 제거한다. API가 로그인 식별자를 query로 붙이므로 `login=*` 패턴까지 포함한다. [Supabase redirect 허용 패턴](https://supabase.com/docs/guides/auth/redirect-urls)
 
 Google OAuth 클라이언트의 승인된 redirect URI는 앱 주소가 아니라 Supabase가 안내하는 `https://<project-ref>.supabase.co/auth/v1/callback`이다. 같은 Supabase 프로젝트를 사용한다면 기존 설정을 유지한다.
 
@@ -130,8 +129,9 @@ Google OAuth 클라이언트의 승인된 redirect URI는 앱 주소가 아니�
 - [ ] 두 Vercel 빌드 성공 및 Cloudflare DNS / HTTPS 확인.
 - [ ] 웹에서 학교 Google 계정으로 로그인·로그아웃.
 - [ ] 관리자 계정으로 관리자 페이지 로그인, 일반 계정의 관리자 접근 거부 확인.
-- [ ] 웹 스터디 조회와 관리자 목록 조회로 DB·API 연결 확인.
+- [ ] 개발자 도구에서 요청 대상이 `api.skkucomit.com`인지 확인하고 웹 스터디·관리자 목록 조회로 DB·API 연결 확인.
+- [ ] API 쿠키의 HttpOnly·Secure·SameSite=Lax와 Domain 미지정, 두 프론트의 CORS 허용 및 다른 origin 차단 확인.
 - [ ] 모집 설정이 있는 경우 가입·수정 요청이 Origin 검사에 막히지 않는지 확인.
 
 빌드와 단위 테스트가 통과해도 실제 DNS·Cloudtype 네트워크·Google OAuth 검증을 대신하지 않는다.
-현재 task의 검증 결과는 [0019-production-deployment.md](tasks/0019-production-deployment.md)에 기록한다.
+이번 API 직접 호출 전환의 검증 결과는 [0024-direct-api-requests.md](tasks/0024-direct-api-requests.md)에 기록한다.

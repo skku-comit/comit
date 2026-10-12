@@ -1,14 +1,14 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto"
 
 import {
-  BadRequestException,
-  Body,
   Controller,
   ForbiddenException,
+  Get,
   Header,
-  Headers,
-  HttpCode,
   Post,
+  Query,
+  Req,
+  Res,
   ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common"
@@ -16,14 +16,25 @@ import { ApiTags } from "@nestjs/swagger"
 import { createClient, type Session, type User } from "@supabase/supabase-js"
 import { z } from "zod"
 
+import {
+  allowedOrigin,
+  allowedOrigins,
+  apiOrigin,
+  BrowserRequest,
+  BrowserResponse,
+  cookieOptions,
+  loginCookie,
+  readCookie,
+  sessionCookie,
+  setSessionCookie,
+} from "./browser"
 import { ApiEndpoint } from "./swagger"
 import { parse } from "./validation"
 
 const lifetime = 30 * 24 * 60 * 60
-const loginSchema = z.object({ origin: z.string().url() })
-const callbackSchema = loginSchema.extend({
-  code: z.string().min(1).max(2048),
-  state: z.string().min(1).max(8192),
+const loginSchema = z.object({
+  origin: z.string().url(),
+  destination: z.enum(["/", "/my"]).default("/my"),
 })
 const sessionSchema = z.object({
   kind: z.literal("session"),
@@ -39,6 +50,7 @@ const stateSchema = z.object({
   expires: z.number(),
   storage: z.record(z.string(), z.string()),
   flowId: z.string().nullable(),
+  destination: z.enum(["/", "/my"]),
 })
 
 function key() {
@@ -77,14 +89,6 @@ function open(value: string) {
   } catch {
     throw new UnauthorizedException("유효하지 않은 세션입니다.")
   }
-}
-function allowedOrigin(origin: string) {
-  const allowed = (process.env.AUTH_ALLOWED_ORIGINS ?? "")
-    .split(",")
-    .map((value) => value.trim())
-  if (!allowed.includes(origin) || new URL(origin).origin !== origin)
-    throw new BadRequestException("허용되지 않은 로그인 주소입니다.")
-  return origin
 }
 export function authClient(storage?: Record<string, string>) {
   const url = process.env.SUPABASE_URL
@@ -172,95 +176,133 @@ export async function resolveSession(value: string, origin: string) {
 export class AuthController {
   @ApiEndpoint({
     summary: "Google 로그인 시작",
-    body: loginSchema,
-    response: z.object({ url: z.string(), state: z.string() }),
+    query: loginSchema,
+    status: 302,
+    response: z.null(),
+    description:
+      "API 쿠키에 PKCE 상태를 저장하고 Google 로그인으로 이동합니다.",
   })
   @Header("Cache-Control", "no-store")
-  @HttpCode(200)
-  @Post("login")
-  async login(@Body() input: unknown) {
-    const { origin } = parse(loginSchema, input)
+  @Get("login")
+  async login(@Query() input: unknown, @Res() response: BrowserResponse) {
+    const { origin, destination } = parse(loginSchema, input)
     allowedOrigin(origin)
+    const id = randomBytes(16).toString("hex")
     const storage: Record<string, string> = {}
     const { data, error } = await authClient(storage).auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback`,
+        redirectTo: `${apiOrigin()}/auth/callback?login=${id}`,
         skipBrowserRedirect: true,
       },
     })
     if (error || !data.url)
       throw new ServiceUnavailableException("로그인을 시작하지 못했습니다.")
-    return {
-      url: data.url,
-      state: seal({
+    response.cookie(
+      loginCookie(id),
+      seal({
         kind: "login",
         origin,
+        destination,
         expires: Date.now() + 600_000,
         storage,
         flowId: data.flowId,
       }),
-    }
+      { ...cookieOptions(), maxAge: 600_000 }
+    )
+    response.redirect(302, data.url)
   }
   @ApiEndpoint({
-    summary: "Google 인증 코드 교환",
-    body: callbackSchema,
-    response: z.object({ session: z.string() }),
+    summary: "Google 로그인 콜백",
+    status: 302,
+    query: z.object({
+      code: z.string().optional(),
+      login: z.string(),
+      error: z.string().optional(),
+    }),
+    response: z.null(),
   })
   @Header("Cache-Control", "no-store")
-  @HttpCode(200)
-  @Post("callback")
-  async callback(@Body() input: unknown) {
-    const { code, state, origin } = parse(callbackSchema, input)
-    allowedOrigin(origin)
-    const parsed = stateSchema.safeParse(open(state))
-    if (
-      !parsed.success ||
-      parsed.data.expires <= Date.now() ||
-      parsed.data.origin !== origin
-    )
+  @Get("callback")
+  async callback(
+    @Query() query: { code?: string; login?: string },
+    @Req() request: BrowserRequest,
+    @Res() response: BrowserResponse
+  ) {
+    if (!query.login || !/^[0-9a-f]{32}$/.test(query.login))
       throw new UnauthorizedException("로그인을 다시 시작해 주세요.")
-    const client = authClient(parsed.data.storage)
-    const { data, error } = await client.auth.exchangeCodeForSession(
-      code,
-      parsed.data.flowId ? { flowId: parsed.data.flowId } : undefined
-    )
-    if (error || !data.session)
-      throw new UnauthorizedException("로그인을 완료하지 못했습니다.")
-    // 토큰 응답에 포함된 사용자 정보도 Auth 서버에 다시 확인한다.
-    const verified = await client.auth.getUser(data.session.access_token)
+    const cookie = loginCookie(query.login)
+    const value = readCookie(request, cookie)
+    response.clearCookie(cookie, cookieOptions())
+    if (!value) throw new UnauthorizedException("로그인을 다시 시작해 주세요.")
+    const parsed = stateSchema.safeParse(open(value))
+    if (!parsed.success)
+      throw new UnauthorizedException("로그인을 다시 시작해 주세요.")
+    const state = parsed.data
+    allowedOrigin(state.origin)
     try {
-      if (verified.error) throw verified.error
-      identity(verified.data.user)
+      if (
+        !query.code ||
+        query.code.length > 2048 ||
+        state.expires <= Date.now()
+      )
+        throw new UnauthorizedException("인증 코드가 없습니다.")
+      const client = authClient(state.storage)
+      const { data, error } = await client.auth.exchangeCodeForSession(
+        query.code,
+        state.flowId ? { flowId: state.flowId } : undefined
+      )
+      if (error || !data.session)
+        throw new UnauthorizedException("로그인을 완료하지 못했습니다.")
+      const verified = await client.auth.getUser(data.session.access_token)
+      try {
+        if (verified.error) throw verified.error
+        identity(verified.data.user)
+      } catch {
+        await client.auth.admin.signOut(data.session.access_token, "local")
+        throw new UnauthorizedException("학교 Google 계정으로 로그인해 주세요.")
+      }
+      setSessionCookie(
+        response,
+        state.origin,
+        sessionValue(data.session, state.origin)
+      )
+      response.redirect(302, `${state.origin}${state.destination}`)
     } catch {
-      await client.auth.admin.signOut(data.session.access_token, "local")
-      throw new UnauthorizedException("학교 Google 계정으로 로그인해 주세요.")
+      response.redirect(302, `${state.origin}/login?error=1`)
     }
-    return { session: sessionValue(data.session, origin) }
   }
   @ApiEndpoint({
     summary: "현재 세션 로그아웃",
-    body: z.object({}),
-    response: z.object({ success: z.boolean() }),
+    status: 303,
+    response: z.null(),
+    description:
+      "허용된 프론트 Origin의 세션 쿠키를 삭제하고 해당 앱의 로그인 화면으로 이동합니다.",
   })
   @Header("Cache-Control", "no-store")
-  @HttpCode(200)
   @Post("logout")
   async logout(
-    @Headers("x-comit-session") session?: string,
-    @Headers("x-comit-origin") origin?: string
+    @Req() request: BrowserRequest,
+    @Res() response: BrowserResponse
   ) {
-    if (session) {
-      const { access } = await resolveSession(session, origin ?? "")
-      const { error } = await authClient().auth.admin.signOut(access, "local")
-      if (
-        error &&
-        error.status !== 401 &&
-        error.status !== 403 &&
-        error.status !== 404
-      )
-        throw new ServiceUnavailableException("로그아웃을 완료하지 못했습니다.")
+    const origin = request.headers.origin ?? ""
+    if (!allowedOrigins().includes(origin))
+      throw new ForbiddenException("허용되지 않은 요청입니다.")
+    const cookie = sessionCookie(origin)
+    const session = readCookie(request, cookie)
+    try {
+      if (session) {
+        const { access } = await resolveSession(session, origin)
+        const { error } = await authClient().auth.admin.signOut(access, "local")
+        if (error && ![401, 403, 404].includes(error.status ?? 0))
+          throw new ServiceUnavailableException(
+            "로그아웃을 완료하지 못했습니다."
+          )
+      }
+    } catch (error) {
+      if (!(error instanceof UnauthorizedException)) throw error
     }
-    return { success: true }
+    response.clearCookie(cookie, cookieOptions())
+    response.redirect(303, `${origin}/login`)
   }
 }

@@ -8,6 +8,13 @@ import {
 } from "@nestjs/common"
 
 import { authClient, identity, resolveSession } from "./auth-session"
+import {
+  allowedOrigins,
+  cookieOptions,
+  readCookie,
+  sessionCookie,
+  setSessionCookie,
+} from "./browser"
 
 export interface Identity {
   id: string
@@ -26,18 +33,23 @@ export class AuthGuard implements CanActivate {
   async canActivate(ctx: ExecutionContext) {
     const request = ctx.switchToHttp().getRequest()
     let token = request.headers.authorization?.match(/^Bearer (.+)$/)?.[1]
-    const session = request.headers["x-comit-session"]
+    const origin = request.headers.origin ?? ""
+    const session = allowedOrigins().includes(origin)
+      ? readCookie(request, sessionCookie(origin))
+      : undefined
     if (session) {
-      const resolved = await resolveSession(
-        session,
-        request.headers["x-comit-origin"] ?? ""
-      )
-      token = resolved.access
-      if (resolved.renewed)
-        ctx
-          .switchToHttp()
-          .getResponse()
-          .setHeader("x-comit-session", resolved.renewed)
+      const response = ctx.switchToHttp().getResponse()
+      try {
+        const resolved = await resolveSession(session, origin)
+        token = resolved.access
+        if (resolved.renewed)
+          setSessionCookie(response, origin, resolved.renewed)
+        response.setHeader("Cache-Control", "no-store")
+      } catch (error) {
+        if (error instanceof UnauthorizedException)
+          response.clearCookie(sessionCookie(origin), cookieOptions())
+        throw error
+      }
     }
     if (!token) throw new UnauthorizedException("로그인이 필요합니다.")
     const { data, error } = await authClient().auth.getUser(token)

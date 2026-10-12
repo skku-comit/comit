@@ -33,6 +33,7 @@
   },
   "globalDependencies": [".prettierrc", "tsconfig.json"],
   "globalEnv": [
+    "NODE_ENV",
     "DATABASE_URL",
     "DIRECT_DATABASE_URL",
     "TEST_DATABASE_URL",
@@ -40,7 +41,8 @@
     "SUPABASE_PUBLISHABLE_KEY",
     "ADMIN_EMAILS",
     "SITE_URL",
-    "API_URL",
+    "NEXT_PUBLIC_API_URL",
+    "API_PUBLIC_URL",
     "AUTH_SESSION_SECRET",
     "AUTH_ALLOWED_ORIGINS"
   ]

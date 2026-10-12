@@ -1,6 +1,6 @@
-import Link from "next/link"
-
 import { Button } from "@comit/ui/components/button"
+
+import { loginUrl } from "@/lib/backend"
 
 export default async function Login({
   searchParams,
@@ -19,7 +19,7 @@ export default async function Login({
           로그인에 실패했습니다. 학교 계정으로 다시 시도해 주세요.
         </p>
       )}
-      <Button render={<Link href="/auth/login" />} nativeButton={false}>
+      <Button render={<a href={loginUrl()} />} nativeButton={false}>
         Google로 로그인
       </Button>
     </main>

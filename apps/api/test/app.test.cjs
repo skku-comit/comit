@@ -59,8 +59,8 @@ test(
       assert.equal(spec.components.securitySchemes.bearer.scheme, "bearer")
       const expectedRoutes = {
         "/": ["get"],
-        "/auth/login": ["post"],
-        "/auth/callback": ["post"],
+        "/auth/login": ["get"],
+        "/auth/callback": ["get"],
         "/auth/logout": ["post"],
         "/users/me": ["get"],
         "/users": ["get", "post"],
@@ -91,8 +91,8 @@ test(
       )
       const publicRoutes = new Set([
         "get /",
-        "post /auth/login",
-        "post /auth/callback",
+        "get /auth/login",
+        "get /auth/callback",
         "post /auth/logout",
         "get /semesters/current",
         "get /studies",
@@ -105,7 +105,13 @@ test(
           assert.ok(operation.summary)
           assert.ok(
             operation.responses[
-              method === "post" && !path.startsWith("/auth/") ? 201 : 200
+              path.startsWith("/auth/")
+                ? method === "post"
+                  ? 303
+                  : 302
+                : method === "post"
+                  ? 201
+                  : 200
             ].content["application/json"].schema
           )
           if (publicRoutes.has(`${method} ${path}`)) {
@@ -120,7 +126,7 @@ test(
             assert.equal(parameter.schema.format, "uuid")
           }
           if (method === "post" || method === "patch") {
-            if (!path.endsWith("/activate")) {
+            if (!path.endsWith("/activate") && !path.startsWith("/auth/")) {
               assert.equal(operation.requestBody.required, true)
               assert.equal(
                 operation.requestBody.content["application/json"].schema.type,
