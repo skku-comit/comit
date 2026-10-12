@@ -9,7 +9,9 @@ WORKDIR /app
 FROM base AS build
 COPY . .
 RUN pnpm install --frozen-lockfile --filter @comit/api...
-RUN pnpm --filter @comit/api build
+RUN cd apps/api \
+    && node node_modules/prisma/build/index.js generate \
+    && node node_modules/@nestjs/cli/bin/nest.js build
 
 FROM base AS runtime
 ENV NODE_ENV=production
@@ -22,7 +24,9 @@ COPY --from=build --chown=node:node /app/apps/api/package.json ./apps/api/packag
 COPY --from=build --chown=node:node /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build --chown=node:node /app/apps/api/dist ./apps/api/dist
 COPY --from=build --chown=node:node /app/apps/api/prisma ./apps/api/prisma
+WORKDIR /app/apps/api
 USER node
 EXPOSE 3002
 # Failed migrations prevent the API from starting with an incompatible schema.
-CMD ["sh", "-c", "pnpm --filter @comit/api db:deploy && exec node apps/api/dist/main.js"]
+# Invoke the installed CLI directly: pnpm run can auto-install workspace deps.
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && exec node dist/main.js"]

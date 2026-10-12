@@ -47,6 +47,8 @@ DB URL에는 `schema=comit&sslmode=require`를 포함한다. Cloudtype에서 직
 
 컨테이너는 시작할 때 `prisma migrate deploy`로 저장소의 마이그레이션을 적용하고 성공한 뒤 API를 실행한다. 처음에는 레플리카 1개로 시작한다. DB 비밀번호 등은 **Build arguments가 아닌 런타임 환경 변수**로 입력한다. `.dockerignore`가 로컬 `.env`와 `.env.local`을 빌드 컨텍스트에서 제외한다.
 
+Prisma·Nest CLI는 설치된 파일을 Node로 직접 실행한다. 컨테이너에서 `pnpm run`을 사용하면 pnpm의 의존성 확인 기능이 전체 workspace 설치를 다시 시작할 수 있기 때문이다. 실행 로그에 `Scope: all 6 workspace projects`와 Next.js·Storybook 다운로드가 나타나면 수정된 Dockerfile이 반영됐는지 확인한다. 이 변경은 기존 이미지의 재시작만으로 적용되지 않으며, GitHub에 수정된 Dockerfile을 올린 뒤 Cloudtype에서 새 이미지를 빌드하는 재배포가 필요하다.
+
 Cloudtype에서 발급한 HTTPS 주소를 복사한다. 해당 주소의 `/`에 접근하면 다음 응답이 나와야 한다.
 
 ```json
