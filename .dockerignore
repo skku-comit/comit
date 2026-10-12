@@ -1,0 +1,14 @@
+.git
+**/node_modules
+**/.next
+**/.turbo
+**/dist
+**/coverage
+**/*.tsbuildinfo
+**/.env*
+**/.vercel
+.pnpm-store
+.playwright-cli
+output
+**/storybook-static
+.DS_Store

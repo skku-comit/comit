@@ -35,7 +35,7 @@ pnpm --filter @comit/api db:deploy
 2. Supabase Auth URL Configuration에 사용자·관리자 앱의 `/auth/callback` URL을 등록한다. 개발 주소는 `http://localhost:3000/auth/callback`, `http://localhost:3001/auth/callback`이다. 운영 주소도 각각 등록한다.
 3. 두 웹 앱에 `.env.example`을 복사해 `.env.local`을 만든다. Supabase URL·publishable key, 각 앱의 `SITE_URL`, 내부 `API_URL`을 설정한다.
 4. API `.env`에 동일 프로젝트의 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`를 설정한다. `ADMIN_EMAILS`는 학교 관리자 이메일을 쉼표로 구분한다. 비어 있으면 관리자 권한을 가진 사용자가 없다.
-5. `pnpm dev`로 실행한다. API는 localhost에 바인딩되므로 운영 배포에서는 Next.js 서버가 접근 가능한 내부 주소/네트워크 구성을 준비한다.
+5. `pnpm dev`로 실행한다. API는 기본적으로 localhost에 바인딩된다. 컨테이너 배포에서는 `HOST=0.0.0.0`을 설정하고 Next.js 서버가 접근할 수 있는 HTTPS 주소를 `API_URL`에 지정한다. 상세 설정은 [운영 배포 안내](deployment.md)를 따른다.
 
 학교 Google 계정과 확인된 이메일을 서버에서 검사한다. 허용 도메인은 `g.skku.edu`, `skku.edu`다. 웹 쿠키의 세션 토큰은 Next.js 서버에서 API로 전달하며, API는 Supabase Auth에 토큰을 검증한다. DB 비밀번호와 관리자 이메일 설정은 브라우저에 전달하지 않는다. Google 로그인 성공 여부만으로 관리자 접근을 허용하지 않는다.
 
