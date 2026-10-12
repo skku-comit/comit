@@ -4,32 +4,17 @@ import { useEffect, useState } from "react"
 
 import type { MeResponse } from "@comit/contracts"
 
-import { supabaseBrowser } from "@/lib/supabase-browser"
-
 export type HeaderAccount = { email: string; name?: string }
 
 export function useHeaderAccount() {
   const [account, setAccount] = useState<HeaderAccount | null>(null)
-  const [loading, setLoading] = useState(
-    Boolean(
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    )
-  )
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const client = supabaseBrowser()
-    if (!client) return
     let active = true
-    let revision = 0
     let pending: AbortController | undefined
-    const update = async (email?: string) => {
-      const current = ++revision
+    const update = async () => {
       pending?.abort()
-      if (!active) return
-      setAccount(email ? { email } : null)
-      setLoading(false)
-      if (!email) return
       const controller = new AbortController()
       pending = controller
       try {
@@ -37,23 +22,26 @@ export function useHeaderAccount() {
           signal: controller.signal,
           cache: "no-store",
         })
-        if (!response.ok) return
-        const me: MeResponse = await response.json()
-        if (active && current === revision)
-          setAccount({ email, name: me.user?.name || undefined })
+        const me: MeResponse | null = response.ok ? await response.json() : null
+        if (active && !controller.signal.aborted)
+          setAccount(
+            me ? { email: me.email, name: me.user?.name || undefined } : null
+          )
       } catch {
-        // 인증된 계정의 이메일 표시를 유지한다.
+        // 일시적인 연결 실패 시 표시 중인 계정 정보를 유지한다.
+      } finally {
+        if (active && !controller.signal.aborted) setLoading(false)
       }
     }
-    const { data } = client.auth.onAuthStateChange((_event, session) => {
-      void update(session?.user.email)
-    })
-    // INITIAL_SESSION을 포함한 인증 이벤트로 상태를 초기화한다.
+    void update()
+    const onFocus = () => {
+      void update()
+    }
+    window.addEventListener("focus", onFocus)
     return () => {
       active = false
-      revision++
       pending?.abort()
-      data.subscription.unsubscribe()
+      window.removeEventListener("focus", onFocus)
     }
   }, [])
 

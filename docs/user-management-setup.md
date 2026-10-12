@@ -33,11 +33,11 @@ pnpm --filter @comit/api db:deploy
 
 1. Google Cloud OAuth 클라이언트를 만들고 Supabase Auth의 Google provider를 설정한다. Supabase가 표시하는 callback URL을 Google의 승인된 redirect URI에 등록한다.
 2. Supabase Auth URL Configuration에 사용자·관리자 앱의 `/auth/callback` URL을 등록한다. 개발 주소는 `http://localhost:3000/auth/callback`, `http://localhost:3001/auth/callback`이다. 운영 주소도 각각 등록한다.
-3. 두 웹 앱에 `.env.example`을 복사해 `.env.local`을 만든다. Supabase URL·publishable key, 각 앱의 `SITE_URL`, 내부 `API_URL`을 설정한다.
-4. API `.env`에 동일 프로젝트의 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`를 설정한다. `ADMIN_EMAILS`는 학교 관리자 이메일을 쉼표로 구분한다. 비어 있으면 관리자 권한을 가진 사용자가 없다.
+3. 두 웹 앱에 `.env.example`을 복사해 `.env.local`을 만든다. 각 앱의 `SITE_URL`, 내부 `API_URL`만 설정한다. 프론트에 Supabase URL·키를 설정하지 않는다.
+4. API `.env`에 동일 프로젝트의 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`를 설정한다. `AUTH_SESSION_SECRET`은 `openssl rand -hex 32`로 생성한 64자리 hex 문자열이다. 재시작·레플리카 간 동일하게 유지하고 API에만 보관한다. `AUTH_ALLOWED_ORIGINS`에는 두 앱의 `SITE_URL` origin을 쉼표로 구분해 입력한다(개발: `http://localhost:3000,http://localhost:3001`). `ADMIN_EMAILS`는 학교 관리자 이메일을 쉼표로 구분한다. 비어 있으면 관리자 권한을 가진 사용자가 없다.
 5. `pnpm dev`로 실행한다. API는 기본적으로 localhost에 바인딩된다. 컨테이너 배포에서는 `HOST=0.0.0.0`을 설정하고 Next.js 서버가 접근할 수 있는 HTTPS 주소를 `API_URL`에 지정한다. 상세 설정은 [운영 배포 안내](deployment.md)를 따른다.
 
-학교 Google 계정과 확인된 이메일을 서버에서 검사한다. 허용 도메인은 `g.skku.edu`, `skku.edu`다. 웹 쿠키의 세션 토큰은 Next.js 서버에서 API로 전달하며, API는 Supabase Auth에 토큰을 검증한다. DB 비밀번호와 관리자 이메일 설정은 브라우저에 전달하지 않는다. Google 로그인 성공 여부만으로 관리자 접근을 허용하지 않는다.
+학교 Google 계정과 확인된 이메일을 서버에서 검사한다. 허용 도메인은 `g.skku.edu`, `skku.edu`다. 로그인 시작·PKCE 코드 교환·토큰 갱신·로그아웃은 API에서 처리한다. Next.js 서버는 API가 암호화한 세션을 HttpOnly·SameSite=Lax 쿠키에 저장하고 API 요청에 전달한다(HTTPS에서는 Secure). API는 세션의 사이트 주소와 만료를 확인하고 Supabase Auth에 사용자 토큰을 검증한다. 세션은 최대 30일, 로그인 대기 상태는 10분 유지한다. 세션 키 변경 시 기존 사용자는 다시 로그인해야 한다. DB 비밀번호와 관리자 이메일 설정은 브라우저에 전달하지 않는다. Google 로그인 성공 여부만으로 관리자 접근을 허용하지 않는다.
 
 ## 첫 운영 순서
 
@@ -51,7 +51,7 @@ pnpm --filter @comit/api db:deploy
 
 ## API 계약
 
-모든 보호 API는 Supabase access token을 `Authorization: Bearer`로 받는다. 관리자 목록은 페이지당 20건이다. 상태 충돌·중복·동시 처리에는 409를 반환하므로 화면을 새로 불러온 뒤 처리한다.
+웹·관리자 서버는 보호 API에 암호화 세션을 `x-comit-session`, 사이트 origin을 `x-comit-origin`으로 전달한다. 갱신된 세션은 응답의 `x-comit-session`으로 받아 쿠키를 교체한다. 기존 `Authorization: Bearer` 인증은 Swagger 등 직접 API 호출에 계속 사용할 수 있다. `POST /auth/login`은 `{ origin }`, `POST /auth/callback`은 `{ origin, code, state }`를 받으며, `POST /auth/logout`은 현재 세션을 해제한다. 관리자 목록은 페이지당 20건이다. 상태 충돌·중복·동시 처리에는 409를 반환하므로 화면을 새로 불러온 뒤 처리한다.
 
 | 경로                                                        | 용도                            |
 | ----------------------------------------------------------- | ------------------------------- |

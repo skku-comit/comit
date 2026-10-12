@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server"
 
-import { supabase } from "@/lib/supabase"
+import { backend, setLoginState, siteOrigin } from "@/lib/session"
 
 export async function GET() {
   try {
-    const origin = process.env.SITE_URL
-    if (!origin) throw new Error("SITE_URL 설정이 필요합니다.")
-    const client = await supabase()
-    const { data, error } = await client.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${origin}/auth/callback` },
+    const response = await backend("auth/login", {
+      method: "POST",
+      body: JSON.stringify({ origin: siteOrigin() }),
     })
-    if (error || !data.url) throw new Error("로그인을 시작하지 못했습니다.")
-    return NextResponse.redirect(data.url)
+    if (!response.ok) throw new Error("로그인을 시작하지 못했습니다.")
+    const { url, state } = await response.json()
+    await setLoginState(state)
+    return NextResponse.redirect(url)
   } catch {
     return NextResponse.json(
       { message: "로그인을 시작하지 못했습니다. 운영진에게 문의해 주세요." },

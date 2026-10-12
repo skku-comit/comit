@@ -59,6 +59,9 @@ test(
       assert.equal(spec.components.securitySchemes.bearer.scheme, "bearer")
       const expectedRoutes = {
         "/": ["get"],
+        "/auth/login": ["post"],
+        "/auth/callback": ["post"],
+        "/auth/logout": ["post"],
         "/users/me": ["get"],
         "/users": ["get", "post"],
         "/users/{id}": ["patch"],
@@ -88,6 +91,9 @@ test(
       )
       const publicRoutes = new Set([
         "get /",
+        "post /auth/login",
+        "post /auth/callback",
+        "post /auth/logout",
         "get /semesters/current",
         "get /studies",
         "get /studies/{id}",
@@ -98,9 +104,9 @@ test(
           assert.ok(operation, `${method} ${path}`)
           assert.ok(operation.summary)
           assert.ok(
-            operation.responses[method === "post" ? 201 : 200].content[
-              "application/json"
-            ].schema
+            operation.responses[
+              method === "post" && !path.startsWith("/auth/") ? 201 : 200
+            ].content["application/json"].schema
           )
           if (publicRoutes.has(`${method} ${path}`)) {
             assert.ok(!operation.security?.length)

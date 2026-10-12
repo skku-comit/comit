@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { supabase } from "@/lib/supabase"
+import { backend, siteOrigin } from "@/lib/session"
 
 async function proxy(
   request: NextRequest,
@@ -17,39 +17,17 @@ async function proxy(
       )
     if (
       request.method !== "GET" &&
-      request.headers.get("origin") !== new URL(process.env.SITE_URL!).origin
+      request.headers.get("origin") !== siteOrigin()
     )
       return NextResponse.json(
         { message: "허용되지 않은 요청입니다." },
         { status: 403 }
       )
-    const publicStudy =
-      request.method === "GET" &&
-      path[0] === "studies" &&
-      (path.length === 1 ||
-        (path.length === 2 && /^[0-9a-f-]{36}$/i.test(path[1] ?? "")))
-    const client = publicStudy ? null : await supabase()
-    const { data, error } = client
-      ? await client.auth.getSession()
-      : { data: { session: null }, error: null }
-    if (!publicStudy && (error || !data.session))
-      return NextResponse.json(
-        { message: "로그인이 필요합니다." },
-        { status: 401 }
-      )
-    const upstream = await fetch(
-      `${process.env.API_URL ?? "http://127.0.0.1:3002"}/${path.map(encodeURIComponent).join("/")}${request.nextUrl.search}`,
+    const upstream = await backend(
+      `${path.map(encodeURIComponent).join("/")}${request.nextUrl.search}`,
       {
         method: request.method,
-        headers: {
-          ...(data.session
-            ? { Authorization: `Bearer ${data.session.access_token}` }
-            : {}),
-          "Content-Type": "application/json",
-        },
         body: request.method === "GET" ? undefined : await request.text(),
-        cache: "no-store",
-        signal: AbortSignal.timeout(15000),
       }
     )
     const responseBody = await upstream.text()

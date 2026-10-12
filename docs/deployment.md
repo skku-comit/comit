@@ -32,16 +32,18 @@ Vercel은 현재 Node 24 / 22를 지원하므로 두 프론트 프로젝트에�
 5. 시작 명령은 Dockerfile의 CMD를 사용하도록 별도 덮어쓰기를 비운다.
 6. 다음 환경 변수를 서비스의 런타임 환경 변수로 등록하고 배포한다.
 
-| 변수                       | 값                                               |
-| -------------------------- | ------------------------------------------------ |
-| `NODE_ENV`                 | `production` (이미지 기본값)                     |
-| `HOST`                     | `0.0.0.0` (이미지 기본값)                        |
-| `PORT`                     | `3002` (이미지 기본값)                           |
-| `DATABASE_URL`             | 기존 Supabase 서비스 DB 접속 URL                 |
-| `DIRECT_DATABASE_URL`      | 마이그레이션용 DB 접속 URL                       |
-| `SUPABASE_URL`             | `https://<project-ref>.supabase.co`              |
-| `SUPABASE_PUBLISHABLE_KEY` | 기존 프로젝트 publishable key                    |
-| `ADMIN_EMAILS`             | 실제 관리자 학교 이메일, 여러 명이면 쉼표로 구분 |
+| 변수                       | 값                                                  |
+| -------------------------- | --------------------------------------------------- |
+| `NODE_ENV`                 | `production` (이미지 기본값)                        |
+| `HOST`                     | `0.0.0.0` (이미지 기본값)                           |
+| `PORT`                     | `3002` (이미지 기본값)                              |
+| `DATABASE_URL`             | 기존 Supabase 서비스 DB 접속 URL                    |
+| `DIRECT_DATABASE_URL`      | 마이그레이션용 DB 접속 URL                          |
+| `SUPABASE_URL`             | `https://<project-ref>.supabase.co`                 |
+| `SUPABASE_PUBLISHABLE_KEY` | 기존 프로젝트 publishable key                       |
+| `AUTH_SESSION_SECRET`      | `openssl rand -hex 32`로 생성한 64자리 hex 비밀 값  |
+| `AUTH_ALLOWED_ORIGINS`     | `https://skkucomit.com,https://admin.skkucomit.com` |
+| `ADMIN_EMAILS`             | 실제 관리자 학교 이메일, 여러 명이면 쉼표로 구분    |
 
 DB URL에는 `schema=comit&sslmode=require`를 포함한다. Cloudtype에서 직접 연결의 IPv6 주소에 접근할 수 없다면 Supabase **Session pooler(5432)**를 사용한다. 사용자명은 `comit_api.<project-ref>`다. 기존 전용 계정·스키마 준비와 상세 연결 설정은 [부원 관리 실행 안내](user-management-setup.md)를 따른다.
 
@@ -84,15 +86,13 @@ Root Directory 설정의 **Include source files outside of the Root Directory in
 
 각 프로젝트의 **Production** 환경에 아래 값을 등록한다.
 
-| 변수                                   | web                                 | admin                         |
-| -------------------------------------- | ----------------------------------- | ----------------------------- |
-| `ENABLE_EXPERIMENTAL_COREPACK`         | `1`                                 | `1`                           |
-| `NEXT_PUBLIC_SUPABASE_URL`             | 기존 Supabase URL                   | 동일                          |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | 기존 publishable key                | 동일                          |
-| `SITE_URL`                             | `https://skkucomit.com`             | `https://admin.skkucomit.com` |
-| `API_URL`                              | Cloudtype HTTPS 주소, 끝의 `/` 제외 | 동일                          |
+| 변수                           | web                                 | admin                         |
+| ------------------------------ | ----------------------------------- | ----------------------------- |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1`                                 | `1`                           |
+| `SITE_URL`                     | `https://skkucomit.com`             | `https://admin.skkucomit.com` |
+| `API_URL`                      | Cloudtype HTTPS 주소, 끝의 `/` 제외 | 동일                          |
 
-`NEXT_PUBLIC_*`는 빌드 결과에 포함되므로 변경 후 재배포해야 한다. 환경 변수 설정을 바꾸면 새 배포를 실행한다.
+프론트에는 Supabase URL·키를 설정하지 않는다. 기존 `NEXT_PUBLIC_SUPABASE_URL`·`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 설정을 삭제하고 새 배포를 실행한다. API의 `AUTH_SESSION_SECRET`은 모든 레플리카·재시작에서 동일하게 유지한다. `AUTH_ALLOWED_ORIGINS`에는 실제 프론트 origin만 등록하며 Preview 도메인도 로그인에 사용할 경우 명시적으로 추가한다. 기존 Supabase 쿠키는 새 인증에 사용하지 않으므로 배포 후 다시 로그인한다.
 Production의 `SITE_URL`로는 도메인 연결 후 로그인·POST 요청을 확인한다. 임시 `*.vercel.app` 주소에서는 리디렉션·Origin 검사가 운영 도메인을 기준으로 동작한다.
 Preview에서 로그인을 검증하려면 별도의 고정 테스트 도메인, 해당 `SITE_URL`, Supabase callback 허용 URL을 설정한다.
 

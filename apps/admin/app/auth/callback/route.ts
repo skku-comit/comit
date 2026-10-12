@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 
-import { supabase } from "@/lib/supabase"
+import { backend, setSession, siteOrigin, takeLoginState } from "@/lib/session"
 
 export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code")
   try {
-    if (!code) throw new Error("인증 코드가 없습니다.")
-    const client = await supabase()
-    const { error } = await client.auth.exchangeCodeForSession(code)
-    if (error) throw error
-    const { data } = await client.auth.getUser()
-    const email = data.user?.email?.toLowerCase()
-    if (
-      !email ||
-      !["g.skku.edu", "skku.edu"].includes(email.split("@")[1] ?? "")
-    ) {
-      await client.auth.signOut()
-      throw new Error("학교 계정을 사용해 주세요.")
-    }
-    return NextResponse.redirect(new URL("/", process.env.SITE_URL!))
+    const code = request.nextUrl.searchParams.get("code")
+    const state = await takeLoginState()
+    if (!code || !state) throw new Error("인증 정보가 없습니다.")
+    const response = await backend("auth/callback", {
+      method: "POST",
+      body: JSON.stringify({
+        code,
+        state,
+        origin: siteOrigin(),
+      }),
+    })
+    if (!response.ok) throw new Error("로그인을 완료하지 못했습니다.")
+    const { session } = await response.json()
+    await setSession(session)
+    return NextResponse.redirect(new URL("/", siteOrigin()))
   } catch {
     return NextResponse.redirect(
       new URL("/login?error=1", process.env.SITE_URL ?? request.nextUrl.origin)

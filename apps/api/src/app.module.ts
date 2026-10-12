@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common"
 
 import { AppController } from "./app.controller"
+import { AuthController } from "./auth-session"
 import { DatabaseModule } from "./database"
 import { MembershipsModule } from "./memberships"
 import { SemestersModule } from "./semesters"
@@ -15,6 +16,6 @@ import { UsersModule } from "./users"
     MembershipsModule,
     StudiesModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AuthController],
 })
 export class AppModule {}
