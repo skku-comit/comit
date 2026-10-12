@@ -20,32 +20,28 @@ export const metadata: Metadata = {
 const activities = [
   {
     icon: BookOpen,
-    title: "관심사로 연결되는 배움",
-    text: "처음 쓰는 코드부터 AI 논문까지. 서로의 질문과 지식을 나누며 함께 배워요.",
+    title: "스터디",
     label: "STUDY",
     code: "learn(together)",
     href: "/studies",
   },
   {
     icon: Cpu,
-    title: "AI로 넓히는 가능성",
-    text: "에이전틱 코딩 세션에서 AI 도구를 익히고, 서로의 아이디어를 더해 새로운 경험을 만들어요.",
+    title: "AI 세션",
     label: "AI & BUILD",
     code: "idea → reality",
     href: "/sessions",
   },
   {
     icon: Code2,
-    title: "아이디어를 잇는 프로젝트",
-    text: "프로젝트와 해커톤에서 각자의 경험과 강점을 모아, 혼자 떠올린 아이디어를 함께 완성해요.",
+    title: "프로젝트",
     label: "PROJECT",
     code: "git commit",
     href: "/projects",
   },
   {
     icon: Users,
-    title: "코드 너머의 연결",
-    text: "친목 활동부터 홈커밍 데이까지. 동료와 선후배를 만나 경험을 나누고, 활동이 끝난 뒤에도 이어질 관계를 쌓아요.",
+    title: "커뮤니티",
     label: "COMMUNITY",
     code: "you + us",
     href: "/join",
@@ -151,35 +147,27 @@ export default function Page() {
         className={`${styles.container} ${styles.section}`}
         aria-labelledby="activities-title"
       >
-        <p className={styles.eyebrow}>OUR ACTIVITIES</p>
-        <h2 id="activities-title">우리는 이렇게 연결됩니다</h2>
-        <p className={styles.description}>
-          같은 관심사에서 시작해, 함께 배우고 만들며 오래 이어지는 관계로.
-        </p>
+        <h2 id="activities-title">활동</h2>
         <div className={styles.activities}>
-          {activities.map(
-            ({ icon: Icon, title, text, label, code, href }, index) => (
-              <Link key={label} href={href} className={styles.activity}>
-                <div
-                  className={`${styles.activityArt} ${styles[`art${index}`]}`}
-                  aria-hidden="true"
-                >
-                  <span className={styles.artLabel}>COMIT / {label}</span>
-                  <Icon />
-                  <span className={styles.artCode}>{code}</span>
-                  <span className={styles.artNumber}>0{index + 1}</span>
-                </div>
-                <div className={styles.activityBody}>
-                  <p className={styles.eyebrow}>{label}</p>
-                  <h3>
-                    {title}
-                    <ArrowRight aria-hidden="true" />
-                  </h3>
-                  <p>{text}</p>
-                </div>
-              </Link>
-            )
-          )}
+          {activities.map(({ icon: Icon, title, label, code, href }, index) => (
+            <Link key={label} href={href} className={styles.activity}>
+              <div
+                className={`${styles.activityArt} ${styles[`art${index}`]}`}
+                aria-hidden="true"
+              >
+                <span className={styles.artLabel}>COMIT / {label}</span>
+                <Icon />
+                <span className={styles.artCode}>{code}</span>
+                <span className={styles.artNumber}>0{index + 1}</span>
+              </div>
+              <div className={styles.activityBody}>
+                <h3>
+                  {title}
+                  <ArrowRight aria-hidden="true" />
+                </h3>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 

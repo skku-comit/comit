@@ -217,11 +217,6 @@
 .activityBody {
   padding-top: 24px;
 }
-.activityBody .eyebrow {
-  margin-bottom: 8px;
-  color: var(--muted-foreground);
-  font-size: 10px;
-}
 .activityBody h3 {
   display: flex;
   align-items: center;
@@ -234,13 +229,6 @@
 .activityBody h3 svg {
   width: 20px;
   flex-shrink: 0;
-}
-.activityBody > p:last-child {
-  color: var(--muted-foreground);
-  font-size: 15px;
-  line-height: 1.8;
-  margin-top: 12px;
-  max-width: 440px;
 }
 .history {
   background: var(--muted);
