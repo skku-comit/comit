@@ -14,30 +14,30 @@ import styles from "./page.module.css"
 export const metadata: Metadata = {
   title: "CoMit | 성균관대학교 프로그래밍·AI 동아리",
   description:
-    "다른 시작점, 같은 즐거움. 성균관대학교 중앙 프로그래밍·AI 동아리 코밋의 활동과 성장의 기록을 만나보세요.",
+    "점들을 연결하여 더 넓은 네트워크로. 성균관대학교 중앙 프로그래밍·AI 동아리 코밋에서 사람과 지식, 경험을 연결하며 함께 성장하세요.",
 }
 
 const activities = [
   {
     icon: BookOpen,
-    title: "함께 배우는 스터디",
-    text: "처음 쓰는 코드부터 AI 논문까지. 같은 관심사를 가진 사람들과 차근차근 배워요.",
+    title: "관심사로 연결되는 배움",
+    text: "처음 쓰는 코드부터 AI 논문까지. 서로의 질문과 지식을 나누며 함께 배워요.",
     label: "STUDY",
     code: "learn(together)",
     href: "/studies",
   },
   {
     icon: Cpu,
-    title: "AI와 만드는 새로운 경험",
-    text: "에이전틱 코딩 세션에서 AI 도구를 익히고, 아이디어를 직접 구현해요.",
+    title: "AI로 넓히는 가능성",
+    text: "에이전틱 코딩 세션에서 AI 도구를 익히고, 서로의 아이디어를 더해 새로운 경험을 만들어요.",
     label: "AI & BUILD",
     code: "idea → reality",
     href: "/sessions",
   },
   {
     icon: Code2,
-    title: "아이디어가 프로젝트로",
-    text: "프로젝트와 해커톤에서 함께 고민하고 만들며 배운 것을 현실로 옮겨요.",
+    title: "아이디어를 잇는 프로젝트",
+    text: "프로젝트와 해커톤에서 각자의 경험과 강점을 모아, 혼자 떠올린 아이디어를 함께 완성해요.",
     label: "PROJECT",
     code: "git commit",
     href: "/projects",
@@ -45,7 +45,7 @@ const activities = [
   {
     icon: Users,
     title: "코드 너머의 연결",
-    text: "친목 활동부터 홈커밍 데이까지. 서로의 경험을 나누고 오래 이어지는 관계를 만들어요.",
+    text: "친목 활동부터 홈커밍 데이까지. 동료와 선후배를 만나 경험을 나누고, 활동이 끝난 뒤에도 이어질 관계를 쌓아요.",
     label: "COMMUNITY",
     code: "you + us",
     href: "/join",
@@ -74,9 +74,9 @@ export default function Page() {
       <section id="about" className={styles.hero} aria-labelledby="about-title">
         <div className={styles.heroGrid} aria-hidden="true" />
         <div className={styles.heroCode} aria-hidden="true">
-          <span>const community = &#123;</span>
-          <span> curiosity: true,</span>
-          <span> learn: &quot;together&quot;,</span>
+          <span>const network = &#123;</span>
+          <span> people: &quot;CoMit&quot;,</span>
+          <span> connect: &quot;together&quot;,</span>
           <span> possibilities: Infinity</span>
           <span>&#125;</span>
         </div>
@@ -89,9 +89,9 @@ export default function Page() {
             <span className={styles.brace}> &#125;</span>
           </h1>
           <p className={styles.heroDescription}>
-            다른 시작점, 같은 즐거움.
+            서로 다른 관심사와 경험이 만나는 곳, 코밋.
             <br />
-            자유롭게 지식을 나누고, 직접 만들며 성장하는
+            사람과 지식을 잇고, 함께할 수 있는 일을 넓혀가는
             <br className={styles.desktopBreak} /> 성균관대학교 중앙 프로그래밍
             · AI 동아리입니다.
           </p>
@@ -104,7 +104,7 @@ export default function Page() {
           </a>
         </div>
         <span className={styles.heroFooter} aria-hidden="true">
-          Code. Summit.
+          CoMit. Connect. Grow.
         </span>
       </section>
 
@@ -114,31 +114,32 @@ export default function Page() {
         aria-labelledby="intro-title"
       >
         <h2 id="intro-title">
-          개발자를 꿈꾸는
-          <br />
-          모든 학생들을 위해서<span className={styles.accent}>.</span>
+          점들을 연결하여
+          <br />더 넓은 네트워크로<span className={styles.accent}>.</span>
         </h2>
         <p className={styles.description}>
-          호기심으로 모여, 배움으로 연결되는 곳.
+          전공도, 출발점도 달라도 괜찮습니다.
           <br />
           코밋은 성균관대학교 자연과학캠퍼스에서
-          <br className={styles.desktopBreak} /> 함께 배우고 만드는 즐거움을
-          나눕니다.
+          <br className={styles.desktopBreak} /> 프로그래밍과 AI에 대한 관심으로
+          모여,
+          <br className={styles.desktopBreak} /> 서로의 배움과 도전을
+          연결합니다.
         </p>
         <div className={styles.marquee} aria-hidden="true">
           <div className={styles.track}>
             {[0, 1].map((copy) => (
               <span key={copy}>
-                # 프로그래밍 &nbsp; # SHARE &nbsp; # 성균관대학교 &nbsp; # AI
-                &nbsp; # 함께 성장 &nbsp;{" "}
+                # 프로그래밍 &nbsp; # 지식 공유 &nbsp; # 성균관대학교 &nbsp; #
+                AI &nbsp; # 연결 &nbsp;{" "}
               </span>
             ))}
           </div>
           <div className={`${styles.track} ${styles.reverse}`}>
             {[0, 1].map((copy) => (
               <span key={copy}>
-                # COMIT &nbsp; # 전공을 넘어 &nbsp; # BUILD &nbsp; # 호기심
-                &nbsp; # LEARN &nbsp;{" "}
+                # COMIT &nbsp; # 전공을 넘어 &nbsp; # 함께 만들기 &nbsp; #
+                호기심 &nbsp; # 네트워크 &nbsp;{" "}
               </span>
             ))}
           </div>
@@ -152,7 +153,7 @@ export default function Page() {
               <p className={styles.eyebrow}>OUR NAME</p>
               <h2 id="name-title">우리의 이름, CoMit</h2>
               <p className={styles.description}>
-                코드로 도전하고, 함께 나아간다는 뜻을 담았습니다.
+                코드로 만나, 함께 더 높은 곳을 향한다는 뜻을 담았습니다.
               </p>
             </div>
             <div className={styles.nameMeaning} aria-hidden="true">
@@ -171,19 +172,22 @@ export default function Page() {
               <dt>Code + Summit</dt>
               <dd>
                 코드를 뜻하는 Code와 정상을 뜻하는 Summit을 합친 이름입니다.
+                서로의 지식과 경험을 연결해 함께 더 높은 곳을 향합니다.
               </dd>
             </div>
             <div>
               <dt>commit</dt>
               <dd>
-                코드의 변경 사항을 기록하는 commit과 닮은 발음으로, 프로그래밍
-                동아리의 정체성을 담았습니다.
+                코드의 변경 사항을 기록하는 commit과 닮은 발음입니다. 작은
+                기여가 모여 하나의 프로젝트가 되듯, 각자의 배움과 도전이 코밋의
+                다음 발걸음이 됩니다.
               </dd>
             </div>
             <div>
               <dt>Co + Mit</dt>
               <dd>
-                함께를 뜻하는 Co. 함께 배우고 만드는 코밋의 방향을 나타냅니다.
+                함께를 뜻하는 Co. 사람과 사람을 잇고, 배우고 만드는 경험을
+                나누는 코밋의 방향을 나타냅니다.
               </dd>
             </div>
           </dl>
@@ -196,8 +200,10 @@ export default function Page() {
         aria-labelledby="activities-title"
       >
         <p className={styles.eyebrow}>OUR ACTIVITIES</p>
-        <h2 id="activities-title">우리는 이렇게 함께해요</h2>
-        <p className={styles.description}>배움도, 도전도, 새로운 만남도.</p>
+        <h2 id="activities-title">우리는 이렇게 연결됩니다</h2>
+        <p className={styles.description}>
+          같은 관심사에서 시작해, 함께 배우고 만들며 오래 이어지는 관계로.
+        </p>
         <div className={styles.activities}>
           {activities.map(
             ({ icon: Icon, title, text, label, code, href }, index) => (
@@ -234,11 +240,12 @@ export default function Page() {
           <div>
             <p className={styles.eyebrow}>OUR HISTORY</p>
             <h2 id="history-title">
-              작은 시작에서,
-              <br />더 넓은 가능성으로.
+              작은 만남에서,
+              <br />더 넓은 연결로.
             </h2>
             <p className={styles.description}>
-              코밋이 함께 써 내려온 성장의 기록.
+              함께 코딩하던 첫 모임부터, 새로운 동료와 분야로 연결을 넓혀온
+              기록.
             </p>
             <div className={styles.historyMark} aria-hidden="true">
               CoMit
@@ -261,15 +268,18 @@ export default function Page() {
       </section>
 
       <section className={styles.closing}>
-        <p className={styles.eyebrow}>YOUR NEXT COMMIT</p>
+        <p className={styles.eyebrow}>YOUR NEXT CONNECTION</p>
         <h2>
-          다음 이야기는,
+          당신의 점을,
           <br />
-          당신과 함께<span>.</span>
+          코밋과 연결해요<span>.</span>
         </h2>
-        <p>함께 배우고, 나누고, 만들어갈 여러분을 기다립니다.</p>
+        <p>
+          당신의 관심사가 누군가의 아이디어와 만나, 새로운 배움과 도전으로
+          이어집니다.
+        </p>
         <Link href="/join" className={styles.joinLink}>
-          코밋과 함께하기 <ArrowRight aria-hidden="true" />
+          코밋에서 연결 시작하기 <ArrowRight aria-hidden="true" />
         </Link>
         <p className={styles.closingWord} aria-hidden="true">
           CoMit
