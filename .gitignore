@@ -52,3 +52,6 @@ output/
 storybook-static/
 
 !.env.example
+
+# Local support request contains identifiers for removed private data.
+docs/github-privacy-support.md
