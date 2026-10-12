@@ -14,11 +14,20 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { Actor, AuthGuard, Identity, requireAdmin } from "./auth"
 import { Database } from "./database"
+import { ApiEndpoint } from "./swagger"
+import {
+  managedStudyResponse,
+  pageResponse,
+  studyApplicationResponse,
+  studyQuery,
+  studyResponse,
+} from "./swagger.schemas"
 import { pagination, parse } from "./validation"
 
 const text = z.string().trim().min(1).max(200)
@@ -68,6 +77,7 @@ function record(s: Row, privateFields = false) {
     ...(privateFields ? { representativeId, reason } : {}),
   }
 }
+
 @Injectable()
 export class StudiesService {
   constructor(private readonly db: Database) {}
@@ -407,28 +417,81 @@ export class StudiesService {
     })
   }
 }
+@ApiTags("스터디")
 @Controller("studies")
 export class StudiesController {
   constructor(private readonly service: StudiesService) {}
-  @Get() list(@Query() q: Parameters<StudiesService["list"]>[0]) {
+  @ApiEndpoint({
+    summary: "공개 스터디 목록 조회",
+    query: studyQuery,
+    response: pageResponse(studyResponse),
+    description:
+      "승인된 스터디만 반환합니다. status 필터는 공개 목록에 적용되지 않습니다.",
+  })
+  @Get()
+  list(@Query() q: Parameters<StudiesService["list"]>[0]) {
     return this.service.list(q)
   }
-  @Get("me") @UseGuards(AuthGuard) mine(@Actor() a: Identity) {
+  @ApiEndpoint({
+    summary: "내 개설 및 신청 스터디 조회",
+    auth: true,
+    response: z.object({
+      studies: z.array(managedStudyResponse),
+      applications: z.array(
+        studyApplicationResponse.extend({ study: studyResponse })
+      ),
+    }),
+  })
+  @Get("me")
+  @UseGuards(AuthGuard)
+  mine(@Actor() a: Identity) {
     return this.service.mine(a)
   }
-  @Get("admin") @UseGuards(AuthGuard) admin(
+  @ApiEndpoint({
+    summary: "관리자 스터디 목록 조회",
+    admin: true,
+    query: studyQuery.extend({
+      status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
+    }),
+    response: pageResponse(managedStudyResponse),
+  })
+  @Get("admin")
+  @UseGuards(AuthGuard)
+  admin(
     @Actor() a: Identity,
     @Query() q: Parameters<StudiesService["list"]>[0]
   ) {
     return this.service.list(q, a)
   }
-  @Post("admin") @UseGuards(AuthGuard) createAdmin(
-    @Actor() a: Identity,
-    @Body() b: unknown
-  ) {
+  @ApiEndpoint({
+    summary: "관리자 스터디 등록",
+    admin: true,
+    body: inputSchema.safeExtend({
+      semesterId: z.uuid(),
+      type: z.enum(["REGULAR", "AUTONOMOUS"]),
+      representativeId: z.uuid().nullable().optional(),
+    }),
+    response: managedStudyResponse,
+    status: 201,
+    description:
+      "모집 종료는 시작 이후여야 합니다. 정규 스터디는 capacity 0이면 정원 제한 없음, 자율 스터디는 정원 1 이상 및 승인된 부원 스터디장이 필요합니다.",
+  })
+  @Post("admin")
+  @UseGuards(AuthGuard)
+  createAdmin(@Actor() a: Identity, @Body() b: unknown) {
     return this.service.save(a, b, undefined, true)
   }
-  @Patch("admin/:id") @UseGuards(AuthGuard) updateAdmin(
+  @ApiEndpoint({
+    summary: "관리자 스터디 수정",
+    admin: true,
+    params: ["id"],
+    body: inputSchema.safeExtend(versionSchema.shape),
+    response: managedStudyResponse,
+    description: "전체 스터디 정보와 현재 version을 전달합니다.",
+  })
+  @Patch("admin/:id")
+  @UseGuards(AuthGuard)
+  updateAdmin(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
@@ -436,43 +499,120 @@ export class StudiesController {
     requireAdmin(a)
     return this.service.save(a, b, id, true)
   }
-  @Post() @UseGuards(AuthGuard) create(
-    @Actor() a: Identity,
-    @Body() b: unknown
-  ) {
+  @ApiEndpoint({
+    summary: "자율 스터디 개설 신청",
+    auth: true,
+    body: inputSchema,
+    response: managedStudyResponse,
+    status: 201,
+    description:
+      "현재 학기의 승인된 부원만 신청 가능합니다. 정원은 1 이상이며 모집 종료는 시작 이후여야 합니다.",
+  })
+  @Post()
+  @UseGuards(AuthGuard)
+  create(@Actor() a: Identity, @Body() b: unknown) {
     return this.service.save(a, b)
   }
-  @Get(":id/manage") @UseGuards(AuthGuard) manage(
-    @Actor() a: Identity,
-    @Param("id", new ParseUUIDPipe()) id: string
-  ) {
+  @ApiEndpoint({
+    summary: "스터디 관리 정보 및 신청자 조회",
+    auth: true,
+    params: ["id"],
+    response: z.object({
+      study: managedStudyResponse,
+      applications: z.array(
+        studyApplicationResponse.extend({
+          user: z.object({
+            name: z.string(),
+            studentId: z.string(),
+            department: z.string(),
+          }),
+        })
+      ),
+    }),
+    description: "관리자 또는 해당 스터디장만 조회 가능합니다.",
+  })
+  @Get(":id/manage")
+  @UseGuards(AuthGuard)
+  manage(@Actor() a: Identity, @Param("id", new ParseUUIDPipe()) id: string) {
     return this.service.management(a, id)
   }
-  @Get(":id") detail(@Param("id", new ParseUUIDPipe()) id: string) {
+  @ApiEndpoint({
+    summary: "공개 스터디 상세 조회",
+    params: ["id"],
+    response: studyResponse,
+  })
+  @Get(":id")
+  detail(@Param("id", new ParseUUIDPipe()) id: string) {
     return this.service.detail(id)
   }
-  @Patch(":id") @UseGuards(AuthGuard) update(
+  @ApiEndpoint({
+    summary: "스터디 정보 수정",
+    auth: true,
+    params: ["id"],
+    body: inputSchema.safeExtend(versionSchema.shape),
+    response: managedStudyResponse,
+    description:
+      "관리자 또는 현재 학기의 승인된 부원인 스터디장이 전체 정보와 현재 version을 전달합니다.",
+  })
+  @Patch(":id")
+  @UseGuards(AuthGuard)
+  update(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
   ) {
     return this.service.save(a, b, id)
   }
-  @Post(":id/review") @UseGuards(AuthGuard) review(
+  @ApiEndpoint({
+    summary: "자율 스터디 개설 승인 또는 반려",
+    admin: true,
+    params: ["id"],
+    body: actionSchema.safeExtend({ action: z.enum(["APPROVE", "REJECT"]) }),
+    response: managedStudyResponse,
+    status: 201,
+    description:
+      "반려 시 reason이 필요합니다. version은 조회한 현재 버전입니다.",
+  })
+  @Post(":id/review")
+  @UseGuards(AuthGuard)
+  review(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
   ) {
     return this.service.review(a, id, b)
   }
-  @Post(":id/applications") @UseGuards(AuthGuard) apply(
+  @ApiEndpoint({
+    summary: "자율 스터디 참여 신청",
+    auth: true,
+    params: ["id"],
+    body: z.object({ motivation: z.string().trim().min(1).max(2000) }),
+    response: studyApplicationResponse,
+    status: 201,
+    description: "현재 학기의 승인된 부원만 모집 기간 내 신청할 수 있습니다.",
+  })
+  @Post(":id/applications")
+  @UseGuards(AuthGuard)
+  apply(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
   ) {
     return this.service.apply(a, id, b)
   }
-  @Post(":id/applications/:applicationId/actions") @UseGuards(AuthGuard) action(
+  @ApiEndpoint({
+    summary: "스터디 참여 신청 처리",
+    auth: true,
+    params: ["id", "applicationId"],
+    body: actionSchema,
+    response: studyApplicationResponse,
+    status: 201,
+    description:
+      "CANCEL은 신청 본인, APPROVE·REJECT·WITHDRAW는 관리자 또는 스터디장이 처리합니다. 반려 시 reason이 필요하며 version은 신청의 현재 버전입니다.",
+  })
+  @Post(":id/applications/:applicationId/actions")
+  @UseGuards(AuthGuard)
+  action(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Param("applicationId", new ParseUUIDPipe()) applicationId: string,

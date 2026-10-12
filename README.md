@@ -21,6 +21,8 @@ pnpm dev
 
 개별 앱 실행은 `pnpm --filter @comit/web dev`처럼 사용한다. API 포트는 `PORT` 환경 변수로 변경할 수 있다.
 
+API를 `pnpm --filter @comit/api dev`로 실행하면 [Swagger UI](http://localhost:3002/docs)에서 요청·응답과 권한을 확인하고 API를 실행할 수 있다. [OpenAPI JSON](http://localhost:3002/docs-json)도 제공한다. 인증이 필요한 요청은 Swagger의 **Authorize**에 Supabase 로그인으로 받은 access token을 입력한다(`Bearer` 접두사 제외). 관리자 API는 `ADMIN_EMAILS`에 등록된 계정이 필요하다. 문서 페이지는 인증 없이 접근할 수 있으며, API 호출에는 기존 권한 검증이 적용된다. 포트를 변경하면 문서 주소도 같은 포트를 사용한다.
+
 ```sh
 pnpm format
 pnpm format:check

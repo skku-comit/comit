@@ -11,10 +11,19 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
 import { Prisma } from "@prisma/client"
+import { z } from "zod"
 
 import { Actor, AuthGuard, Identity, requireAdmin } from "./auth"
 import { Database } from "./database"
+import { ApiEndpoint } from "./swagger"
+import {
+  membershipResponse,
+  pageResponse,
+  searchQuery,
+  userResponse,
+} from "./swagger.schemas"
 import { pagination, parse, profileSchema } from "./validation"
 
 @Injectable()
@@ -78,33 +87,72 @@ export class UsersService {
     })
   }
 }
+@ApiTags("부원")
 @Controller("users")
 @UseGuards(AuthGuard)
 export class UsersController {
   constructor(private readonly service: UsersService) {}
-  @Get("me") me(@Actor() a: Identity) {
+  @ApiEndpoint({
+    summary: "내 계정 조회",
+    auth: true,
+    response: z.object({
+      user: userResponse.nullable(),
+      email: z.string(),
+      isAdmin: z.boolean(),
+    }),
+  })
+  @Get("me")
+  me(@Actor() a: Identity) {
     return this.service.me(a)
   }
-  @Get() list(
-    @Actor() a: Identity,
-    @Query() q: { page?: string; search?: string }
-  ) {
+  @ApiEndpoint({
+    summary: "부원 목록 조회",
+    admin: true,
+    query: searchQuery,
+    response: pageResponse(userResponse, true),
+  })
+  @Get()
+  list(@Actor() a: Identity, @Query() q: { page?: string; search?: string }) {
     return this.service.list(a, q)
   }
-  @Post() create(@Actor() a: Identity, @Body() b: unknown) {
+  @ApiEndpoint({
+    summary: "부원 등록",
+    admin: true,
+    body: profileSchema,
+    response: userResponse,
+    status: 201,
+    description:
+      "생년월일은 YYYY-MM-DD 형식의 과거 또는 오늘 날짜입니다. 기타 학적은 academicOther가 필요합니다.",
+  })
+  @Post()
+  create(@Actor() a: Identity, @Body() b: unknown) {
     return this.service.save(a, b)
   }
-  @Patch(":id") update(
+  @ApiEndpoint({
+    summary: "부원 정보 수정",
+    admin: true,
+    params: ["id"],
+    body: profileSchema,
+    response: userResponse,
+    description:
+      "전체 프로필을 전달합니다. 기타 학적은 academicOther가 필요합니다.",
+  })
+  @Patch(":id")
+  update(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
   ) {
     return this.service.save(a, b, id)
   }
-  @Get(":id/memberships") history(
-    @Actor() a: Identity,
-    @Param("id", new ParseUUIDPipe()) id: string
-  ) {
+  @ApiEndpoint({
+    summary: "부원 학기별 가입 이력 조회",
+    admin: true,
+    params: ["id"],
+    response: z.array(membershipResponse),
+  })
+  @Get(":id/memberships")
+  history(@Actor() a: Identity, @Param("id", new ParseUUIDPipe()) id: string) {
     return this.service.history(a, id)
   }
 }

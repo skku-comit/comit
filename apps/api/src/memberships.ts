@@ -15,11 +15,19 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
 import { Prisma } from "@prisma/client"
 import { z } from "zod"
 
 import { Actor, AuthGuard, Identity, requireAdmin } from "./auth"
 import { Database } from "./database"
+import { ApiEndpoint } from "./swagger"
+import {
+  membershipDetailResponse,
+  membershipResponse,
+  pageResponse,
+  searchQuery,
+} from "./swagger.schemas"
 import { pagination, parse, profileSchema } from "./validation"
 
 const applicationSchema = z.object({
@@ -49,6 +57,7 @@ const actionSchema = z
     (v) => v.action !== "PAYMENT" || v.confirmed !== undefined,
     "입금 확인 여부를 지정해 주세요."
   )
+
 @Injectable()
 export class MembershipsService {
   constructor(private readonly db: Database) {}
@@ -369,39 +378,101 @@ export class MembershipsService {
     })
   }
 }
+@ApiTags("가입 신청")
 @Controller("memberships")
 @UseGuards(AuthGuard)
 export class MembershipsController {
   constructor(private readonly service: MembershipsService) {}
-  @Get("me") mine(@Actor() a: Identity) {
+  @ApiEndpoint({
+    summary: "내 가입 신청 조회",
+    auth: true,
+    response: z.array(membershipResponse),
+  })
+  @Get("me")
+  mine(@Actor() a: Identity) {
     return this.service.mine(a)
   }
-  @Post() submit(@Actor() a: Identity, @Body() b: unknown) {
+  @ApiEndpoint({
+    summary: "현재 학기 가입 신청",
+    auth: true,
+    body: applicationSchema,
+    response: membershipResponse,
+    status: 201,
+    description:
+      "현재 모집 기간에만 신청할 수 있습니다. consentVersion은 현재 학기의 동의문 버전입니다.",
+  })
+  @Post()
+  submit(@Actor() a: Identity, @Body() b: unknown) {
     return this.service.submit(a, b)
   }
-  @Patch(":id") resubmit(
+  @ApiEndpoint({
+    summary: "가입 신청 수정 및 재제출",
+    auth: true,
+    params: ["id"],
+    body: applicationSchema,
+    response: membershipResponse,
+    description:
+      "본인의 대기 또는 보완 요청 신청만 수정할 수 있습니다. 신청 후 학번은 변경할 수 없습니다.",
+  })
+  @Patch(":id")
+  resubmit(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
   ) {
     return this.service.submit(a, b, id)
   }
-  @Get() list(
+  @ApiEndpoint({
+    summary: "가입 신청 목록 조회",
+    admin: true,
+    query: searchQuery.extend({
+      semesterId: z.uuid(),
+      type: z.enum(["NEW", "RETURNING"]),
+      status: z.enum(["PENDING", "CHANGES_REQUESTED", "APPROVED", "REJECTED"]),
+      payment: z.enum(["true", "false"]),
+    }),
+    response: pageResponse(membershipResponse, true),
+  })
+  @Get()
+  list(
     @Actor() a: Identity,
     @Query() q: Parameters<MembershipsService["list"]>[1]
   ) {
     return this.service.list(a, q)
   }
-  @Post("historical") historical(@Actor() a: Identity, @Body() b: unknown) {
+  @ApiEndpoint({
+    summary: "과거 학기 가입 이력 등록",
+    admin: true,
+    body: z.object({ userId: z.uuid(), semesterId: z.uuid() }),
+    response: membershipResponse,
+    status: 201,
+  })
+  @Post("historical")
+  historical(@Actor() a: Identity, @Body() b: unknown) {
     return this.service.historical(a, b)
   }
-  @Get(":id") detail(
-    @Actor() a: Identity,
-    @Param("id", new ParseUUIDPipe()) id: string
-  ) {
+  @ApiEndpoint({
+    summary: "가입 신청 상세 및 감사 이력 조회",
+    admin: true,
+    params: ["id"],
+    response: membershipDetailResponse,
+  })
+  @Get(":id")
+  detail(@Actor() a: Identity, @Param("id", new ParseUUIDPipe()) id: string) {
     return this.service.detail(a, id)
   }
-  @Post(":id/actions") action(
+  @ApiEndpoint({
+    summary: "가입 신청 처리",
+    admin: true,
+    params: ["id"],
+    body: actionSchema,
+    response: membershipResponse,
+    status: 201,
+    description:
+      "version은 조회한 현재 버전입니다. PAYMENT는 confirmed가, REJECT와 REQUEST_CHANGES는 reason이 필요합니다.",
+  })
+  @Post(":id/actions")
+  action(
     @Actor() a: Identity,
     @Param("id", new ParseUUIDPipe()) id: string,
     @Body() b: unknown
